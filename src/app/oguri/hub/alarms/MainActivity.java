@@ -3,12 +3,16 @@ package app.oguri.hub.alarms;
 import app.oguri.hub.R;
 import app.oguri.hub.UiKit;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
+import android.bluetooth.BluetoothAdapter;
+import android.bluetooth.BluetoothManager;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -20,6 +24,7 @@ import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
@@ -110,6 +115,16 @@ public class MainActivity extends Activity {
         // No permission is requested on open since 1.5: grants live
         // on the hub's shared Permissions screen now.
         refreshAll();
+        // When a band session stores a fresh battery level, re-read
+        // the status row so the open screen shows it as soon as the
+        // session lands instead of on the next visit.
+        DirectBandTransport.batteryUpdatedListener = new Runnable() {
+            @Override
+            public void run() {
+                refreshBandStatus();
+            }
+        };
+        refreshBandOnOpen();
     }
 
     @Override
@@ -139,6 +154,7 @@ public class MainActivity extends Activity {
 
     @Override
     protected void onDestroy() {
+        DirectBandTransport.batteryUpdatedListener = null;
         stopTestSound();
         super.onDestroy();
     }
@@ -670,6 +686,46 @@ public class MainActivity extends Activity {
         java.util.TimeZone tz = java.util.TimeZone.getDefault();
         long now = System.currentTimeMillis();
         transport.setTime(this, now, tz.getOffset(now) / 1000);
+    }
+
+    /**
+     * Opening the app runs the same band sync a change triggers
+     * (syncBandAlarms: the set-all plus the time, and the set-all
+     * session re-reads the battery level), so the band status row
+     * shows current data instead of whatever the last change left
+     * behind. Called once from onCreate, which is once per entry
+     * into the module (standard launch mode: a fresh instance per
+     * open, destroyed on Back), never on mere resumes.
+     *
+     * The start is guarded by the same checks BandSession.open
+     * makes, and fails silently: with no Bluetooth permission (the
+     * grant lives on the hub Permissions screen; nothing is ever
+     * requested here), no adapter, or Bluetooth off, no session is
+     * queued at all and the app behaves exactly as before.
+     */
+    private void refreshBandOnOpen() {
+        if (!bandSessionPossible()) {
+            return;
+        }
+        syncBandAlarms();
+    }
+
+    /** Mirrors BandSession.open's start checks, without throwing. */
+    private boolean bandSessionPossible() {
+        if (Build.VERSION.SDK_INT >= 31) {
+            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
+                    != PackageManager.PERMISSION_GRANTED) {
+                return false;
+            }
+        } else if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                != PackageManager.PERMISSION_GRANTED) {
+            return false;
+        }
+        BluetoothManager manager = (BluetoothManager)
+                getSystemService(Context.BLUETOOTH_SERVICE);
+        BluetoothAdapter adapter = manager != null ? manager.getAdapter()
+                : BluetoothAdapter.getDefaultAdapter();
+        return adapter != null && adapter.isEnabled();
     }
 
     // ----------------------------------------------------------------- rename

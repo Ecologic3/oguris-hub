@@ -52,6 +52,14 @@ public final class DirectBandTransport implements BandTransport {
                 }
             });
 
+    /**
+     * Optional listener run (on the main thread) whenever a session
+     * stores a fresh battery level. The Alarms screen registers one
+     * while it is open so its band status row reflects the level the
+     * moment a session lands, instead of on the next refresh.
+     */
+    public static volatile Runnable batteryUpdatedListener;
+
     private List<byte[]> mLastBuiltFrames = new ArrayList<byte[]>();
 
     @Override
@@ -160,6 +168,10 @@ public final class DirectBandTransport implements BandTransport {
         if (level != null) {
             AlarmStore.setBandBatteryLevel(appCtx, level.intValue(),
                     System.currentTimeMillis());
+            Runnable listener = batteryUpdatedListener;
+            if (listener != null) {
+                new Handler(Looper.getMainLooper()).post(listener);
+            }
         }
     }
 

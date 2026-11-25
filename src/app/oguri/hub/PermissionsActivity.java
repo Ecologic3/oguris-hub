@@ -84,16 +84,17 @@ public class PermissionsActivity extends Activity {
         header.setLayoutParams(headerLp);
         root.addView(header);
 
+        // Card order matches the hub home screen's module order.
         root.addView(moduleCard("Alarms", R.mipmap.ic_mod_alarms,
                 Color.rgb(139, 92, 246), alarmsRows()));
         root.addView(moduleCard("Steps", R.mipmap.ic_mod_steps,
                 Color.rgb(61, 220, 151), stepsRows()));
-        root.addView(moduleCard("Chips", R.mipmap.ic_mod_chips,
-                Color.rgb(217, 164, 65), null));
         root.addView(moduleCard("Printer", R.mipmap.ic_mod_printer,
                 Color.rgb(245, 168, 61), printerRows()));
         root.addView(moduleCard("VPN Switch", R.mipmap.ic_mod_vpn,
                 Color.rgb(69, 216, 255), vpnRows()));
+        root.addView(moduleCard("Chips", R.mipmap.ic_mod_chips,
+                Color.rgb(217, 164, 65), null));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(UiKit.BG);

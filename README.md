@@ -8,10 +8,29 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.5 (versionCode 6), minSdk 29,
+Package: `app.oguri.hub`, version 1.6 (versionCode 7), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.6
+
+Three fixes from Adam's first use of 1.5. The Permissions
+screen's cards now run in the hub home's module order (Alarms,
+Steps, Printer, VPN Switch, Chips) instead of the render's.
+Alarms runs its band sync on open: entering the module queues the
+same syncBandAlarms a change triggers (set-all plus time, and the
+set-all session re-reads the battery level), guarded by the same
+start checks the band session itself makes, so with no Bluetooth
+permission, no adapter or Bluetooth off it skips silently and
+nothing is ever requested on open; when a session stores a fresh
+battery level the open screen's status row re-reads it at once.
+Chips pre-fills a new game's four seats from the remembered
+player names in order whenever history exists, instead of
+leaving every slot on "Tap to set name"; the name dialog's
+quick-picks and the on-entry remembering are unchanged, and the
+names still live only in the module's private on-device
+preferences.
 
 ### 1.5
 
@@ -140,7 +159,7 @@ must sit at the APK archive root, hence the zip from inside
 `build/dex`.
 
 ```sh
-./build.sh   # produces OguriHub-1.5.apk
+./build.sh   # produces OguriHub-1.6.apk
 ```
 
 The signing keystore (`oguris-hub.keystore`) is generated on first

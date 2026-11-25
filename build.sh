@@ -1,5 +1,5 @@
 #!/bin/sh
-# Builds OguriHub-1.5.apk with the manual pipeline (no Gradle).
+# Builds OguriHub-1.6.apk with the manual pipeline (no Gradle).
 # Same pattern as the other Oguri apps: aapt2 link, javac (no lambdas,
 # they break d8), d8, dex zipped in from inside the dex dir so
 # classes.dex lands at the APK root, zipalign, apksigner.
@@ -18,7 +18,7 @@ if [ ! -f "$KS" ]; then
     -dname "CN=Oguri Hub, O=Oguri, C=SK"
 fi
 
-OUT="OguriHub-1.5.apk"
+OUT="OguriHub-1.6.apk"
 rm -rf build
 mkdir -p build/classes build/dex build/gen
 

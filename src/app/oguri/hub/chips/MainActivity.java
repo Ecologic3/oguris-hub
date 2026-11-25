@@ -508,9 +508,20 @@ public class MainActivity extends Activity {
         setContentView(page(root));
     }
 
-    /** the shipped defaults: four empty seats, names are set by whoever uses the app */
+    /**
+     * The defaults for a new game: four seats, pre-filled from the
+     * remembered player names (most recent first) in seat order
+     * whenever history exists, so the regular lineup is already
+     * there instead of "Tap to set name". Fewer remembered names
+     * than seats leaves the remaining seats empty as before; extra
+     * remembered names simply stay in the history (and in the name
+     * dialog's quick-picks) for the Add player flow.
+     */
     void addDefaultPlayers(Engine e) {
-        for (int s = 1; s <= 4; s++) e.addPlayer("", s, 0);
+        List<String> known = knownNames();
+        for (int s = 1; s <= 4; s++) {
+            e.addPlayer(s <= known.size() ? known.get(s - 1) : "", s, 0);
+        }
     }
     String displayName(Player pl) { return pl.name.isEmpty() ? "Player " + pl.seat : pl.name; }
     void applySetup() {
