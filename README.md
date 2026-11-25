@@ -8,10 +8,26 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.3 (versionCode 4), minSdk 29,
+Package: `app.oguri.hub`, version 1.4 (versionCode 5), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.4
+
+New module icons across all five modules. Each icon is an original
+normal-Oguri scene matched to its module's theme, individually
+approved: VPN holding up a glowing cyan key on midnight indigo,
+Alarms jolted awake slapping a ringing twin-bell clock on deep
+violet, Steps mid-stride with a glowing green footprint trail on
+slate teal, Chips leaning in over the poker felt on warm brown,
+Printer holding the little Orico thermal printer on warm
+orange-brown. The plates carry a soft radial glow and no sparkles.
+Icons are processed with the family's established recipe (the
+Alarms/Steps make_icons pipeline): full art as the legacy icon,
+the art at 68% of the adaptive canvas with alpha-feathered edges
+as the foreground, and each adaptive background colour re-sampled
+from its new plate. No code changed.
 
 ### 1.3
 
