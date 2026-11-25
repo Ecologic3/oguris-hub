@@ -1,0 +1,176 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="app.oguri.hub"
+    android:versionCode="1"
+    android:versionName="1.0">
+
+    <uses-sdk
+        android:minSdkVersion="29"
+        android:targetSdkVersion="34" />
+
+    <!-- Android 11+ package visibility for the VPN module: without this,
+         PackageManager cannot see Tailscale. -->
+    <queries>
+        <package android:name="com.tailscale.ipn" />
+    </queries>
+
+    <!-- Steps module -->
+    <uses-permission android:name="android.permission.ACTIVITY_RECOGNITION" />
+    <!-- Alarms module -->
+    <uses-permission android:name="android.permission.USE_EXACT_ALARM" />
+    <uses-permission android:name="android.permission.SCHEDULE_EXACT_ALARM" />
+    <!-- Shared service permissions -->
+    <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <!-- Bluetooth (alarms band sync + printer) -->
+    <uses-permission android:name="android.permission.BLUETOOTH_CONNECT" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_SCAN"
+        android:usesPermissionFlags="neverForLocation" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH"
+        android:maxSdkVersion="30" />
+    <uses-permission
+        android:name="android.permission.BLUETOOTH_ADMIN"
+        android:maxSdkVersion="30" />
+    <!-- Location: WiFi name reads (VPN) + classic Bluetooth discovery -->
+    <uses-permission android:name="android.permission.ACCESS_FINE_LOCATION" />
+    <uses-permission
+        android:name="android.permission.ACCESS_COARSE_LOCATION"
+        android:maxSdkVersion="30" />
+    <!-- VPN module -->
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.ACCESS_WIFI_STATE" />
+
+    <uses-feature
+        android:name="android.hardware.bluetooth_le"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.bluetooth"
+        android:required="false" />
+    <uses-feature
+        android:name="android.hardware.sensor.stepcounter"
+        android:required="false" />
+
+    <application
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:label="@string/app_name"
+        android:roundIcon="@mipmap/ic_launcher"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <!-- Hub shell -->
+        <activity
+            android:name="app.oguri.hub.MainActivity"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+        <activity
+            android:name="app.oguri.hub.ImportActivity"
+            android:exported="false" />
+
+        <!-- Alarms module -->
+        <activity
+            android:name="app.oguri.hub.alarms.MainActivity"
+            android:exported="false" />
+
+        <receiver
+            android:name="app.oguri.hub.alarms.AlarmReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name="app.oguri.hub.alarms.BackupTimerReceiver"
+            android:exported="false" />
+
+        <receiver
+            android:name="app.oguri.hub.alarms.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <service
+            android:name="app.oguri.hub.alarms.BackupService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Sound-only phone backup for Honor Band alarms set through Gadgetbridge" />
+        </service>
+
+        <!-- Steps module -->
+        <activity
+            android:name="app.oguri.hub.steps.MainActivity"
+            android:exported="false" />
+
+        <service
+            android:name="app.oguri.hub.steps.StepService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Continuous step counting from the hardware step counter sensor" />
+        </service>
+
+        <receiver
+            android:name="app.oguri.hub.steps.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+        <receiver
+            android:name="app.oguri.hub.steps.StepsWidget"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data
+                android:name="android.appwidget.provider"
+                android:resource="@xml/steps_widget_info" />
+        </receiver>
+
+        <!-- Chips module -->
+        <activity
+            android:name="app.oguri.hub.chips.MainActivity"
+            android:exported="false"
+            android:screenOrientation="portrait" />
+
+        <!-- Printer module -->
+        <activity
+            android:name="app.oguri.hub.printer.MainActivity"
+            android:exported="false" />
+
+        <!-- VPN Switch module -->
+        <activity
+            android:name="app.oguri.hub.vpn.MainActivity"
+            android:exported="false" />
+
+        <service
+            android:name="app.oguri.hub.vpn.SwitchService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="Watches the connected WiFi network to switch Tailscale off on home networks and on everywhere else" />
+        </service>
+
+        <receiver
+            android:name="app.oguri.hub.vpn.BootReceiver"
+            android:exported="true">
+            <intent-filter>
+                <action android:name="android.intent.action.BOOT_COMPLETED" />
+            </intent-filter>
+        </receiver>
+
+    </application>
+</manifest>
