@@ -1,4 +1,10 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="ic_bg">#0D2030</color>
+    <!-- Each module icon keeps its standalone app's plate colour. -->
+    <color name="ic_mod_alarms_bg">#260C5C</color>
+    <color name="ic_mod_steps_bg">#1E0032</color>
+    <color name="ic_mod_chips_bg">#0A211D</color>
+    <color name="ic_mod_printer_bg">#260A5B</color>
+    <color name="ic_mod_vpn_bg">#1B2748</color>
 </resources>

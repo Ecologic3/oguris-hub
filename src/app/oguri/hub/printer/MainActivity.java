@@ -1,5 +1,7 @@
 package app.oguri.hub.printer;
 
+import app.oguri.hub.R;
+
 import android.Manifest;
 import android.app.Activity;
 import android.bluetooth.BluetoothAdapter;
@@ -304,8 +306,7 @@ public class MainActivity extends Activity {
         header.addView(title);
         ImageView headerIcon = new ImageView(this);
         try {
-            headerIcon.setImageDrawable(
-                    getPackageManager().getApplicationIcon(getPackageName()));
+            headerIcon.setImageResource(R.mipmap.ic_mod_printer);
         } catch (Exception ignored) { }
         headerIcon.setLayoutParams(new LinearLayout.LayoutParams(dp(48), dp(48)));
         header.addView(headerIcon);

@@ -180,7 +180,7 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         // Header row, same as Oguri's Alarms: app name left, the
-        // launcher icon at the top right.
+        // module's own icon at the top right.
         LinearLayout headerRow = new LinearLayout(this);
         headerRow.setOrientation(LinearLayout.HORIZONTAL);
         headerRow.setGravity(Gravity.CENTER_VERTICAL);
@@ -191,8 +191,7 @@ public class MainActivity extends Activity {
         headerRow.addView(title);
         try {
             ImageView icon = new ImageView(this);
-            icon.setImageDrawable(getPackageManager().getApplicationIcon(
-                    getApplicationInfo()));
+            icon.setImageResource(R.mipmap.ic_mod_steps);
             headerRow.addView(icon, new LinearLayout.LayoutParams(dp(48), dp(48)));
         } catch (Exception ignored) {
             // The icon is cosmetic only; the header works without it.

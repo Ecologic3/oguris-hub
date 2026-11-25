@@ -9,15 +9,15 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * Oguri Hub home screen: one dark shell, five module cards.
+ * Oguri's Hub home screen: one dark shell, five module cards.
  * Each card opens the module's own MainActivity, ported in full
- * under app.oguri.hub.<module>. A migration card at the bottom
- * imports data exported from the standalone Steps and Alarms apps.
+ * under app.oguri.hub.<module>.
  */
 public class MainActivity extends Activity {
 
@@ -36,6 +36,15 @@ public class MainActivity extends Activity {
         {"VPN Switch", "Tailscale off at home, on away", "app.oguri.hub.vpn", "179,157,217"},
     };
 
+    // Each card carries its module's own standalone launcher icon.
+    private static final int[] MODULE_ICONS = {
+        R.mipmap.ic_mod_alarms,
+        R.mipmap.ic_mod_steps,
+        R.mipmap.ic_mod_chips,
+        R.mipmap.ic_mod_printer,
+        R.mipmap.ic_mod_vpn,
+    };
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -48,7 +57,7 @@ public class MainActivity extends Activity {
         root.setPadding(dp(20), dp(24), dp(20), dp(24));
 
         TextView title = new TextView(this);
-        title.setText("Oguri Hub");
+        title.setText("Oguri's Hub");
         title.setTextColor(GOLD);
         title.setTextSize(30);
         title.setTypeface(Typeface.DEFAULT_BOLD);
@@ -60,32 +69,9 @@ public class MainActivity extends Activity {
         sub.setTextSize(15);
         root.addView(sub);
 
-        for (final String[] m : MODULES) {
-            root.addView(moduleCard(m));
+        for (int i = 0; i < MODULES.length; i++) {
+            root.addView(moduleCard(MODULES[i], MODULE_ICONS[i]));
         }
-
-        TextView migTitle = new TextView(this);
-        migTitle.setText("\nDATA MIGRATION");
-        migTitle.setTextColor(GOLD);
-        migTitle.setTextSize(13);
-        migTitle.setTypeface(Typeface.DEFAULT_BOLD);
-        root.addView(migTitle);
-
-        TextView migText = new TextView(this);
-        migText.setText("Coming from the standalone apps? Export your data there "
-                + "(Steps and Alarms have an Export button in their migration "
-                + "releases), then import the files here. Alarms are re-registered "
-                + "with the system as soon as they are imported.\n");
-        migText.setTextColor(MUTED);
-        migText.setTextSize(14);
-        root.addView(migText);
-
-        root.addView(actionButton("IMPORT STEPS DATA", new View.OnClickListener() {
-            @Override public void onClick(View v) { openImport("steps"); }
-        }));
-        root.addView(actionButton("IMPORT ALARMS DATA", new View.OnClickListener() {
-            @Override public void onClick(View v) { openImport("alarms"); }
-        }));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(BG);
@@ -93,7 +79,7 @@ public class MainActivity extends Activity {
         setContentView(scroll);
     }
 
-    private View moduleCard(final String[] m) {
+    private View moduleCard(final String[] m, int iconRes) {
         String[] rgb = m[3].split(",");
         int accent = Color.rgb(Integer.parseInt(rgb[0]), Integer.parseInt(rgb[1]),
                 Integer.parseInt(rgb[2]));
@@ -119,6 +105,12 @@ public class MainActivity extends Activity {
         barBg.setCornerRadius(dp(3));
         bar.setBackground(barBg);
         card.addView(bar, new LinearLayout.LayoutParams(dp(6), dp(46)));
+
+        ImageView icon = new ImageView(this);
+        icon.setImageResource(iconRes);
+        LinearLayout.LayoutParams iconLp = new LinearLayout.LayoutParams(dp(46), dp(46));
+        iconLp.setMargins(dp(14), 0, 0, 0);
+        card.addView(icon, iconLp);
 
         LinearLayout texts = new LinearLayout(this);
         texts.setOrientation(LinearLayout.VERTICAL);
@@ -152,33 +144,6 @@ public class MainActivity extends Activity {
             }
         });
         return card;
-    }
-
-    private TextView actionButton(String label, View.OnClickListener click) {
-        TextView b = new TextView(this);
-        b.setText(label);
-        b.setTextColor(BG);
-        b.setTextSize(15);
-        b.setTypeface(Typeface.DEFAULT_BOLD);
-        b.setGravity(Gravity.CENTER);
-        b.setPadding(dp(16), dp(13), dp(16), dp(13));
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(GOLD);
-        bg.setCornerRadius(dp(10));
-        b.setBackground(bg);
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                LinearLayout.LayoutParams.MATCH_PARENT,
-                LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, dp(10));
-        b.setLayoutParams(lp);
-        b.setOnClickListener(click);
-        return b;
-    }
-
-    private void openImport(String mode) {
-        Intent i = new Intent(this, ImportActivity.class);
-        i.putExtra(ImportActivity.EXTRA_MODE, mode);
-        startActivity(i);
     }
 
     private int dp(int v) {

@@ -125,7 +125,7 @@ public class StepService extends Service implements SensorEventListener {
         Notification.Builder b = Build.VERSION.SDK_INT >= 26
                 ? new Notification.Builder(this, CHANNEL)
                 : new Notification.Builder(this);
-        b.setSmallIcon(R.mipmap.ic_launcher)
+        b.setSmallIcon(R.mipmap.ic_mod_steps)
          .setContentTitle("Oguri's Steps")
          .setContentText(text)
          .setContentIntent(pi)

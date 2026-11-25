@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Oguri Hub</string>
+    <string name="app_name">Oguri\'s Hub</string>
     <string name="steps_app_name">Oguri\'s Steps</string>
     <string name="steps_widget_desc">Today\'s step count</string>
 </resources>

@@ -27,6 +27,7 @@ import android.widget.SeekBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import app.oguri.hub.R;
 import app.oguri.hub.chips.Engine;
 import app.oguri.hub.chips.Engine.Game;
 import app.oguri.hub.chips.Engine.Player;
@@ -161,7 +162,7 @@ public class MainActivity extends Activity {
 
     ImageView appIcon(int sizeDp) {
         ImageView iv = new ImageView(this);
-        try { iv.setImageDrawable(getApplicationInfo().loadIcon(getPackageManager())); }
+        try { iv.setImageResource(R.mipmap.ic_mod_chips); }
         catch (Exception e) { /* icon is decorative in the header */ }
         return iv;
     }

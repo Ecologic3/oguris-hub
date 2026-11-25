@@ -1,5 +1,7 @@
 package app.oguri.hub.alarms;
 
+import app.oguri.hub.R;
+
 import android.Manifest;
 import android.app.Activity;
 import android.app.AlarmManager;
@@ -191,8 +193,7 @@ public class MainActivity extends Activity {
 
         try {
             ImageView icon = new ImageView(this);
-            icon.setImageDrawable(getPackageManager().getApplicationIcon(
-                    getApplicationInfo()));
+            icon.setImageResource(R.mipmap.ic_mod_alarms);
             headerRow.addView(icon, new LinearLayout.LayoutParams(dp(48), dp(48)));
         } catch (Exception ignored) {
             // No icon is cosmetic only; the header works without it.
