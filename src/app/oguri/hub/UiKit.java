@@ -2,8 +2,10 @@ package app.oguri.hub;
 
 import android.app.Activity;
 import android.content.Context;
+import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
+import android.graphics.drawable.StateListDrawable;
 import android.view.Gravity;
 import android.view.ViewGroup;
 import android.widget.Button;
@@ -101,6 +103,105 @@ public final class UiKit {
         Button b = new Button(ctx);
         b.setText(text);
         b.setAllCaps(false);
+        return b;
+    }
+
+    // ------------------------------------------------------------ buttons
+    //
+    // The one button style (since 1.5). Every button in the app is
+    // built by one of the three factories below, so the only
+    // differences left between buttons anywhere are the colours a
+    // module passes in (its own accent/surface palette) and the
+    // size role:
+    //
+    //   standard  15sp, padding 16x10dp, radius 12dp
+    //   small     13sp, padding 12x6dp,  radius 12dp, no min size
+    //   pill      14sp, padding 20x8dp,  fully rounded
+    //
+    // All three share the same state behaviour: a pressed colour
+    // (the module's own where it has one, otherwise pressedOf()),
+    // and the fill at 45% alpha while disabled.
+
+    public static final int BTN_RADIUS_DP = 12;
+
+    /** The shared pressed shade for a fill: blended 18% toward white. */
+    public static int pressedOf(int color) {
+        int r = Color.red(color);
+        int g = Color.green(color);
+        int b = Color.blue(color);
+        r += (255 - r) * 18 / 100;
+        g += (255 - g) * 18 / 100;
+        b += (255 - b) * 18 / 100;
+        return Color.rgb(r, g, b);
+    }
+
+    /** The shared button background: normal / pressed / disabled states. */
+    public static StateListDrawable buttonBackground(Context ctx, int fill,
+                                                       int pressed, int stroke,
+                                                       float radiusDp) {
+        StateListDrawable s = new StateListDrawable();
+        s.addState(new int[]{android.R.attr.state_pressed},
+                buttonState(ctx, pressed, stroke, radiusDp));
+        s.addState(new int[]{-android.R.attr.state_enabled},
+                buttonState(ctx, withAlpha(fill, 115), stroke, radiusDp));
+        s.addState(new int[]{}, buttonState(ctx, fill, stroke, radiusDp));
+        return s;
+    }
+
+    private static GradientDrawable buttonState(Context ctx, int color,
+                                                int stroke, float radiusDp) {
+        GradientDrawable g = new GradientDrawable();
+        g.setColor(color);
+        g.setCornerRadius(dp(ctx, radiusDp));
+        if (stroke != 0) {
+            g.setStroke(dp(ctx, 1), stroke);
+        }
+        return g;
+    }
+
+    private static int withAlpha(int color, int alpha) {
+        return Color.argb(alpha, Color.red(color), Color.green(color),
+                Color.blue(color));
+    }
+
+    /** Standard button: the size role most actions use. */
+    public static Button button(Context ctx, String text, int fill,
+                                int pressed, int textColor) {
+        Button b = button(ctx, text);
+        b.setTextSize(15);
+        b.setTextColor(textColor);
+        b.setPadding(dp(ctx, 16), dp(ctx, 10), dp(ctx, 16), dp(ctx, 10));
+        b.setBackground(buttonBackground(ctx, fill, pressed, 0, BTN_RADIUS_DP));
+        return b;
+    }
+
+    /** Small button: compact in-row actions (row items, steppers, chips). */
+    public static Button smallButton(Context ctx, String text, int fill,
+                                     int pressed, int textColor) {
+        Button b = button(ctx, text);
+        b.setTextSize(13);
+        b.setTextColor(textColor);
+        b.setPadding(dp(ctx, 12), dp(ctx, 6), dp(ctx, 12), dp(ctx, 6));
+        b.setMinWidth(0);
+        b.setMinimumWidth(0);
+        b.setMinHeight(0);
+        b.setMinimumHeight(0);
+        b.setBackground(buttonBackground(ctx, fill, pressed, 0, BTN_RADIUS_DP));
+        return b;
+    }
+
+    /** Pill button: fully rounded; toggle chips and utility actions. */
+    public static Button pillButton(Context ctx, String text, int fill,
+                                    int pressed, int stroke, int textColor) {
+        Button b = button(ctx, text);
+        b.setTextSize(14);
+        b.setTextColor(textColor);
+        b.setPadding(dp(ctx, 20), dp(ctx, 8), dp(ctx, 20), dp(ctx, 8));
+        b.setMinWidth(0);
+        b.setMinimumWidth(0);
+        b.setMinHeight(0);
+        b.setMinimumHeight(0);
+        b.setBackground(buttonBackground(ctx, fill, pressed, stroke, 999));
         return b;
     }
 

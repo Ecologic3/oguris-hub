@@ -79,9 +79,6 @@ public class MainActivity extends Activity {
     private Button connectBtn;
     private Button scanBtn;
     private LinearLayout deviceList;
-    private TextView permStatus;
-    private Button permBtButton;
-    private Button permLocButton;
 
     private final List<PrinterDevices.Device> devices = new ArrayList<PrinterDevices.Device>();
     private boolean bleScanning;
@@ -179,15 +176,8 @@ public class MainActivity extends Activity {
     }
 
     @Override
-    protected void onResume() {
-        super.onResume();
-        refreshPermissions();
-    }
-
-    @Override
     public void onRequestPermissionsResult(int requestCode, String[] permissions, int[] grantResults) {
         super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        refreshPermissions();
         Toast.makeText(this, "Permissions updated, tap Scan again", Toast.LENGTH_SHORT).show();
     }
 
@@ -224,9 +214,9 @@ public class MainActivity extends Activity {
     }
 
     private Button button(String label) {
-        Button b = UiKit.button(this, label);
-        b.setTextSize(14);
-        return b;
+        // The shared UiKit button factory since 1.5: this module's
+        // chip surface, the hub's geometry and states.
+        return UiKit.button(this, label, CHIPBG, UiKit.pressedOf(CHIPBG), TEXT);
     }
 
     /** Warm-accent tint for seek bars, replacing the platform default. */
@@ -243,10 +233,9 @@ public class MainActivity extends Activity {
 
     /** Segmented chip row styling, shared by density/alignment/font selectors. */
     private void styleChip(Button b, boolean selected) {
-        GradientDrawable bg = new GradientDrawable();
-        bg.setCornerRadius(dp(20));
-        bg.setColor(selected ? ACCENT : CHIPBG);
-        b.setBackground(bg);
+        int fill = selected ? ACCENT : CHIPBG;
+        b.setBackground(UiKit.buttonBackground(this, fill,
+                UiKit.pressedOf(fill), 0, 999));
         b.setTextColor(selected ? DARKTEXT : TEXT);
     }
 
@@ -289,7 +278,7 @@ public class MainActivity extends Activity {
         UiKit.applyRootPadding(this, root);
         scroll.addView(root);
 
-        LinearLayout header = UiKit.header(this, "Oguri's Printer", TEXT,
+        LinearLayout header = UiKit.header(this, "Printer", TEXT,
                 R.mipmap.ic_mod_printer);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
@@ -393,63 +382,10 @@ public class MainActivity extends Activity {
         deviceList.setLayoutParams(dlLp);
         printerCard.addView(deviceList);
 
-        // Permissions, the Alarms model (since 1.3): a status line
-        // that always shows where things stand, and one button per
-        // permission that fades once granted instead of vanishing.
-        // Before 1.3 the module had no permission UI at all and
-        // requested silently when Scan was tapped; the on-demand
-        // request in startScan/connect stays as the fallback.
-        permStatus = text("", 13, MUTED, false);
-        LinearLayout.LayoutParams permStatusLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        permStatusLp.setMargins(0, dp(12), 0, 0);
-        permStatus.setLayoutParams(permStatusLp);
-        printerCard.addView(permStatus);
-
-        LinearLayout permRow = new LinearLayout(this);
-        permRow.setOrientation(LinearLayout.HORIZONTAL);
-        LinearLayout.LayoutParams permRowLp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        permRowLp.setMargins(0, dp(8), 0, 0);
-        permRow.setLayoutParams(permRowLp);
-        permBtButton = button("Bluetooth permission");
-        permBtButton.setLayoutParams(new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        permBtButton.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (bluetoothPermissionsGranted()) {
-                    Toast.makeText(MainActivity.this,
-                            "Bluetooth permission already granted",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                requestPermissions(new String[]{
-                        Manifest.permission.BLUETOOTH_SCAN,
-                        Manifest.permission.BLUETOOTH_CONNECT}, REQ_PERMS);
-            }
-        });
-        permRow.addView(permBtButton);
-        permLocButton = button("Location permission");
-        LinearLayout.LayoutParams permLocLp = new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
-        permLocLp.setMargins(dp(8), 0, 0, 0);
-        permLocButton.setLayoutParams(permLocLp);
-        permLocButton.setOnClickListener(new View.OnClickListener() {
-            @Override public void onClick(View v) {
-                if (hasPermission(Manifest.permission.ACCESS_FINE_LOCATION)) {
-                    Toast.makeText(MainActivity.this,
-                            "Location permission already granted",
-                            Toast.LENGTH_SHORT).show();
-                    return;
-                }
-                requestPermissions(new String[]{
-                        Manifest.permission.ACCESS_FINE_LOCATION}, REQ_PERMS);
-            }
-        });
-        permRow.addView(permLocButton);
-        printerCard.addView(permRow);
-        refreshPermissions();
-
+        // Permissions had a status line and two buttons here until
+        // 1.4; since 1.5 they are on the hub's shared Permissions
+        // screen. The on-demand request in startScan/connect stays
+        // as the action-triggered fallback.
         root.addView(printerCard);
 
         // Settings card: density + copies
@@ -1076,37 +1012,6 @@ public class MainActivity extends Activity {
 
     private boolean hasPermission(String perm) {
         return checkSelfPermission(perm) == PackageManager.PERMISSION_GRANTED;
-    }
-
-    /**
-     * The Bluetooth runtime permissions exist only on Android 12+;
-     * below that, Bluetooth is an install-time permission and
-     * counts as granted.
-     */
-    private boolean bluetoothPermissionsGranted() {
-        if (Build.VERSION.SDK_INT < 31) return true;
-        return hasPermission(Manifest.permission.BLUETOOTH_SCAN)
-                && hasPermission(Manifest.permission.BLUETOOTH_CONNECT);
-    }
-
-    /**
-     * Keeps the permission status line and the two permission
-     * buttons in step with reality: granted fades the button to
-     * the shared alpha, never removes it. Runs at build time, on
-     * resume, and after a permission result.
-     */
-    private void refreshPermissions() {
-        if (permStatus == null) return;
-        boolean btOk = bluetoothPermissionsGranted();
-        boolean locOk = hasPermission(Manifest.permission.ACCESS_FINE_LOCATION);
-        permStatus.setText("Bluetooth: " + (btOk ? "granted" : "NOT granted")
-                + "\nLocation: " + (locOk ? "granted" : "NOT granted"));
-        if (permBtButton != null) {
-            permBtButton.setAlpha(btOk ? UiKit.GRANTED_ALPHA : 1.0f);
-        }
-        if (permLocButton != null) {
-            permLocButton.setAlpha(locOk ? UiKit.GRANTED_ALPHA : 1.0f);
-        }
     }
 
     private boolean ensurePermissions() {

@@ -3,7 +3,6 @@ package app.oguri.hub.vpn;
 import app.oguri.hub.R;
 import app.oguri.hub.UiKit;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -17,13 +16,10 @@ import android.graphics.drawable.StateListDrawable;
 import android.net.ConnectivityManager;
 import android.net.Network;
 import android.net.NetworkCapabilities;
-import android.net.Uri;
 import android.net.wifi.WifiInfo;
 import android.net.wifi.WifiManager;
 import android.os.Build;
 import android.os.Bundle;
-import android.os.PowerManager;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.Button;
@@ -47,7 +43,6 @@ import java.util.List;
  */
 public class MainActivity extends Activity {
     private static final int REQ_LOCATION = 1;
-    private static final int REQ_NOTIFICATIONS = 2;
     private static final String TS_PACKAGE = "com.tailscale.ipn";
 
     // The shared hub background since 1.3 (was a near-identical
@@ -79,10 +74,6 @@ public class MainActivity extends Activity {
     private Button toggleButton;
     private Button logToggleButton;
     private Button addCurrentButton;
-    private LinearLayout permCard;
-    private TextView permStatus;
-    private Button permButton;
-    private Button batteryButton;
     private LinearLayout networksContainer;
     private BroadcastReceiver refreshReceiver;
     private boolean receiverRegistered = false;
@@ -97,12 +88,8 @@ public class MainActivity extends Activity {
         prefs = new Prefs(this);
         buildUi();
 
-        if (Build.VERSION.SDK_INT >= 33
-                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS},
-                    REQ_NOTIFICATIONS);
-        }
+        // No permission is requested on open since 1.5: grants live
+        // on the hub's shared Permissions screen now.
         if (prefs.isMonitoring()) {
             SwitchService.start(this);
         }
@@ -129,11 +116,10 @@ public class MainActivity extends Activity {
     }
 
     private StateListDrawable buttonBg(int normal, int pressed, int disabled) {
-        StateListDrawable s = new StateListDrawable();
-        s.addState(new int[]{android.R.attr.state_pressed}, rounded(pressed, 10));
-        s.addState(new int[]{-android.R.attr.state_enabled}, rounded(disabled, 10));
-        s.addState(new int[]{}, rounded(normal, 10));
-        return s;
+        // The shared UiKit button geometry since 1.5; the disabled
+        // state is the shared 45%-alpha fill, as everywhere else.
+        return UiKit.buttonBackground(this, normal, pressed, 0,
+                UiKit.BTN_RADIUS_DP);
     }
 
     private LinearLayout makeCard(int topMarginDp) {
@@ -151,11 +137,9 @@ public class MainActivity extends Activity {
     }
 
     private Button makeButton(String label, View.OnClickListener listener) {
-        Button b = UiKit.button(this, label);
-        b.setTextSize(15);
-        b.setTextColor(COL_TEXT);
-        b.setBackground(buttonBg(COL_BTN, COL_BTN_PRESSED, COL_BTN_DISABLED));
-        b.setPadding(dp(16), dp(10), dp(16), dp(10));
+        // The shared UiKit button factory since 1.5: this module's
+        // colours, the hub's geometry and states.
+        Button b = UiKit.button(this, label, COL_BTN, COL_BTN_PRESSED, COL_TEXT);
         if (listener != null) {
             b.setOnClickListener(listener);
         }
@@ -185,7 +169,7 @@ public class MainActivity extends Activity {
 
         // The shared module header: name on the left, the module's
         // own icon at the top right.
-        root.addView(UiKit.header(this, "Oguri's VPN Switch", COL_TEXT,
+        root.addView(UiKit.header(this, "VPN Switch", COL_TEXT,
                 R.mipmap.ic_mod_vpn));
 
         // Status block.
@@ -251,60 +235,8 @@ public class MainActivity extends Activity {
         toggleButton.setLayoutParams(lp(14));
         root.addView(toggleButton);
 
-        // Permissions, the Alarms model: an always-visible status
-        // line, then the two buttons. A granted permission fades
-        // its button in refresh(); nothing is ever removed.
-        permCard = makeCard(12);
-        permStatus = makeText("", 14, COL_MUTED);
-        permCard.addView(permStatus);
-
-        permButton = makeButton("Grant location permission",
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                                == PackageManager.PERMISSION_GRANTED) {
-                            Toast.makeText(MainActivity.this,
-                                    "Location permission already granted",
-                                    Toast.LENGTH_SHORT).show();
-                        } else {
-                            requestPermissions(
-                                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION},
-                                    REQ_LOCATION);
-                        }
-                    }
-                });
-        permButton.setLayoutParams(lp(10));
-        permCard.addView(permButton);
-
-        batteryButton = makeButton("Battery exemption",
-                new View.OnClickListener() {
-                    @Override
-                    public void onClick(View v) {
-                        PowerManager pm = (PowerManager) getSystemService(
-                                Context.POWER_SERVICE);
-                        if (pm != null && pm.isIgnoringBatteryOptimizations(
-                                getPackageName())) {
-                            Toast.makeText(MainActivity.this,
-                                    "Battery exemption already granted",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        try {
-                            Intent i = new Intent(
-                                    Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                            i.setData(Uri.parse("package:" + getPackageName()));
-                            startActivity(i);
-                        } catch (Exception e) {
-                            Toast.makeText(MainActivity.this,
-                                    "Could not open battery settings",
-                                    Toast.LENGTH_SHORT).show();
-                        }
-                    }
-                });
-        batteryButton.setLayoutParams(lp(10));
-        permCard.addView(batteryButton);
-        root.addView(permCard);
+        // Permissions lived here until 1.4; since 1.5 they are on
+        // the hub's shared Permissions screen (hub home, bottom).
 
         hintUnknown = makeText("WiFi name is hidden right now. While it is "
                 + "unreadable the app cannot tell home from away, so it holds "
@@ -508,12 +440,8 @@ public class MainActivity extends Activity {
                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
             row.addView(name);
 
-            Button remove = UiKit.button(this, "Remove");
-            remove.setTextSize(13);
-            remove.setTextColor(COL_REMOVE);
-            remove.setBackground(buttonBg(COL_REMOVE_BG, COL_REMOVE_BG_PRESSED,
-                    COL_BTN_DISABLED));
-            remove.setPadding(dp(12), dp(6), dp(12), dp(6));
+            Button remove = UiKit.smallButton(this, "Remove", COL_REMOVE_BG,
+                    COL_REMOVE_BG_PRESSED, COL_REMOVE);
             remove.setOnClickListener(new View.OnClickListener() {
                 @Override
                 public void onClick(View v) {
@@ -599,29 +527,6 @@ public class MainActivity extends Activity {
 
         hintUnknown.setVisibility(onWifi && ssid.length() == 0 ? View.VISIBLE : View.GONE);
         noteNoTailscale.setVisibility(tailscaleInstalled() ? View.GONE : View.VISIBLE);
-
-        // Permission state, the Alarms model: the status line
-        // always shows where things stand, a granted permission's
-        // button fades to GRANTED_ALPHA and stays tappable, and
-        // nothing is ever removed. refresh() runs on every resume,
-        // so returning from a system settings screen updates this
-        // without a restart.
-        boolean locationOk = checkSelfPermission(
-                Manifest.permission.ACCESS_FINE_LOCATION)
-                == PackageManager.PERMISSION_GRANTED;
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        boolean batteryOk = pm != null
-                && pm.isIgnoringBatteryOptimizations(getPackageName());
-        if (permStatus != null) {
-            permStatus.setText("Location: " + (locationOk ? "granted" : "NOT granted")
-                    + "\nBattery optimisation: " + (batteryOk ? "exempt" : "NOT exempt"));
-        }
-        if (permButton != null) {
-            permButton.setAlpha(locationOk ? UiKit.GRANTED_ALPHA : 1.0f);
-        }
-        if (batteryButton != null) {
-            batteryButton.setAlpha(batteryOk ? UiKit.GRANTED_ALPHA : 1.0f);
-        }
 
         boolean monitoring = prefs.isMonitoring();
         toggleButton.setText(monitoring

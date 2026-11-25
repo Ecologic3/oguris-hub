@@ -3,15 +3,12 @@ package app.oguri.hub.alarms;
 import app.oguri.hub.R;
 import app.oguri.hub.UiKit;
 
-import android.Manifest;
 import android.app.Activity;
-import android.app.AlarmManager;
 import android.app.AlertDialog;
 import android.app.TimePickerDialog;
 import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
 import android.graphics.Canvas;
 import android.graphics.Color;
@@ -23,12 +20,9 @@ import android.media.AudioAttributes;
 import android.media.MediaPlayer;
 import android.media.RingtoneManager;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Looper;
-import android.os.PowerManager;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -51,7 +45,7 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * Oguri's Alarms: one screen with a card per alarm. Alarms are a managed
+ * Alarms: one screen with a card per alarm. Alarms are a managed
  * list (AlarmStore, capped at the band's 5 event alarms); every band
  * change goes through the BandTransport boundary (BandTransports.active)
  * as a full set-all sync, and each enabled alarm arms the phone sound
@@ -77,9 +71,6 @@ public class MainActivity extends Activity {
     private boolean mSuppressSwitchEvents;
     private LinearLayout mCardsContainer;
     private Button mAddButton;
-    private Button mExactButton;
-    private Button mBatteryButton;
-    private TextView mSetupStatus;
     private TextView mLastOutcome;
     private TextView mBandStatus;
     private TextView mBandStatusTime;
@@ -116,8 +107,8 @@ public class MainActivity extends Activity {
         // gradient's middle stop instead).
         UiKit.setSystemBars(this, 0xFF150A2E);
         setContentView(buildUi());
-        requestNotificationPermissionIfNeeded();
-        requestBluetoothPermissionIfNeeded();
+        // No permission is requested on open since 1.5: grants live
+        // on the hub's shared Permissions screen now.
         refreshAll();
     }
 
@@ -180,7 +171,7 @@ public class MainActivity extends Activity {
         scroll.addView(root, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        root.addView(UiKit.header(this, "Oguri's Alarms", COLOR_TEXT,
+        root.addView(UiKit.header(this, "Alarms", COLOR_TEXT,
                 R.mipmap.ic_mod_alarms), new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
@@ -283,20 +274,8 @@ public class MainActivity extends Activity {
         titleRow.addView(title, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
 
-        Button editButton = new Button(this);
-        editButton.setText("✎");
-        editButton.setTextSize(13);
-        editButton.setTextColor(COLOR_TEXT);
-        editButton.setAllCaps(false);
-        editButton.setPadding(0, 0, 0, 0);
-        editButton.setMinWidth(0);
-        editButton.setMinimumWidth(0);
-        editButton.setMinHeight(0);
-        editButton.setMinimumHeight(0);
-        GradientDrawable editBg = new GradientDrawable();
-        editBg.setColor(0x26FFFFFF);
-        editBg.setCornerRadius(dp(12));
-        editButton.setBackground(editBg);
+        Button editButton = UiKit.smallButton(this, "✎", 0x26FFFFFF,
+                0x40FFFFFF, COLOR_TEXT);
         LinearLayout.LayoutParams editParams = new LinearLayout.LayoutParams(dp(40), dp(36));
         editParams.rightMargin = dp(8);
         editButton.setLayoutParams(editParams);
@@ -406,18 +385,8 @@ public class MainActivity extends Activity {
         views.statusText = status;
         card.addView(status, statusParams);
 
-        Button deleteButton = new Button(this);
-        deleteButton.setText("Delete alarm");
-        deleteButton.setTextSize(12);
-        deleteButton.setTextColor(COLOR_TEXT_DIM);
-        deleteButton.setAllCaps(false);
-        deleteButton.setPadding(0, 0, 0, 0);
-        deleteButton.setMinWidth(0);
-        deleteButton.setMinimumWidth(0);
-        GradientDrawable deleteBg = new GradientDrawable();
-        deleteBg.setColor(0x26FFFFFF);
-        deleteBg.setCornerRadius(dp(12));
-        deleteButton.setBackground(deleteBg);
+        Button deleteButton = UiKit.smallButton(this, "Delete alarm", 0x26FFFFFF,
+                0x40FFFFFF, COLOR_TEXT_DIM);
         LinearLayout.LayoutParams deleteParams = new LinearLayout.LayoutParams(
                 dp(120), dp(36));
         deleteParams.topMargin = dp(10);
@@ -455,15 +424,9 @@ public class MainActivity extends Activity {
 
         card.addView(UiKit.sectionHeading(this, "Setup", COLOR_TEXT));
 
-        mSetupStatus = new TextView(this);
-        mSetupStatus.setTextSize(13);
-        mSetupStatus.setTextColor(COLOR_TEXT_DIM);
-        LinearLayout.LayoutParams statusParams = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.WRAP_CONTENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        statusParams.topMargin = dp(6);
-        statusParams.bottomMargin = dp(6);
-        card.addView(mSetupStatus, statusParams);
-
+        // Permissions lived in this card until 1.4; since 1.5 they
+        // are on the hub's shared Permissions screen (hub home,
+        // bottom). What stays here is the backup outcome and sound.
         mLastOutcome = new TextView(this);
         mLastOutcome.setTextSize(13);
         mLastOutcome.setTextColor(COLOR_TEXT_DIM);
@@ -472,24 +435,6 @@ public class MainActivity extends Activity {
         outcomeParams.topMargin = dp(4);
         outcomeParams.bottomMargin = dp(6);
         card.addView(mLastOutcome, outcomeParams);
-
-        mExactButton = makeButton("Exact alarm permission");
-        mExactButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openExactAlarmSettings();
-            }
-        });
-        card.addView(mExactButton);
-
-        mBatteryButton = makeButton("Battery optimisation exemption");
-        mBatteryButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                openBatterySettings();
-            }
-        });
-        card.addView(mBatteryButton);
 
         TextView soundLabel = new TextView(this);
         soundLabel.setText("Sound");
@@ -541,13 +486,10 @@ public class MainActivity extends Activity {
     }
 
     private Button makeButton(String text) {
-        Button button = UiKit.button(this, text);
-        button.setTextColor(Color.WHITE);
-        button.setTextSize(14);
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(COLOR_ACCENT);
-        bg.setCornerRadius(dp(14));
-        button.setBackground(bg);
+        // The shared UiKit button factory since 1.5: this module's
+        // accent, the hub's geometry and states.
+        Button button = UiKit.button(this, text, COLOR_ACCENT,
+                UiKit.pressedOf(COLOR_ACCENT), Color.WHITE);
         LinearLayout.LayoutParams params = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         params.topMargin = dp(8);
@@ -916,25 +858,6 @@ public class MainActivity extends Activity {
     }
 
     private void refreshSetupStatus() {
-        if (mSetupStatus == null) {
-            return;
-        }
-        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        boolean exactOk = am != null && am.canScheduleExactAlarms();
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        boolean batteryOk = pm != null
-                && pm.isIgnoringBatteryOptimizations(getPackageName());
-        mSetupStatus.setText("Exact alarms: " + (exactOk ? "allowed" : "NOT allowed")
-                + "\nBattery optimisation: " + (batteryOk ? "exempt" : "NOT exempt"));
-        // A granted permission must not keep shouting for attention: fade
-        // its button (still tappable, in case the permission is revoked
-        // later), keep the not-yet-granted one at full brightness.
-        if (mExactButton != null) {
-            mExactButton.setAlpha(exactOk ? 0.45f : 1.0f);
-        }
-        if (mBatteryButton != null) {
-            mBatteryButton.setAlpha(batteryOk ? 0.45f : 1.0f);
-        }
         if (mSoundTitle != null) {
             mSoundTitle.setText(AlarmStore.getBackupSoundTitle(this));
         }
@@ -944,65 +867,6 @@ public class MainActivity extends Activity {
     }
 
     // ------------------------------------------------------------------ setup
-
-    private void openExactAlarmSettings() {
-        AlarmManager am = (AlarmManager) getSystemService(Context.ALARM_SERVICE);
-        if (am != null && am.canScheduleExactAlarms()) {
-            Toast.makeText(this, "Exact alarms already allowed", Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Intent intent = new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM);
-        intent.setData(Uri.parse("package:" + getPackageName()));
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            startActivity(new Intent(Settings.ACTION_REQUEST_SCHEDULE_EXACT_ALARM));
-        }
-    }
-
-    private void openBatterySettings() {
-        PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
-        if (pm != null && pm.isIgnoringBatteryOptimizations(getPackageName())) {
-            Toast.makeText(this, "Already exempt from battery optimisation",
-                    Toast.LENGTH_SHORT).show();
-            return;
-        }
-        Intent intent = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-        intent.setData(Uri.parse("package:" + getPackageName()));
-        try {
-            startActivity(intent);
-        } catch (Exception e) {
-            startActivity(new Intent(Settings.ACTION_IGNORE_BATTERY_OPTIMIZATION_SETTINGS));
-        }
-    }
-
-    private void requestNotificationPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= 33
-                && checkSelfPermission(Manifest.permission.POST_NOTIFICATIONS)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.POST_NOTIFICATIONS}, 1);
-        }
-    }
-
-    /**
-     * The direct band link needs BLUETOOTH_CONNECT on Android 12+
-     * (shown as "Nearby devices"); on Android 10/11, BLE operations
-     * still ride on the location permission. Without one of these,
-     * band syncs fail with an explanatory toast from the transport.
-     */
-    private void requestBluetoothPermissionIfNeeded() {
-        if (Build.VERSION.SDK_INT >= 31) {
-            if (checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
-                    != PackageManager.PERMISSION_GRANTED) {
-                requestPermissions(
-                        new String[]{Manifest.permission.BLUETOOTH_CONNECT}, 2);
-            }
-        } else if (checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
-                != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(
-                    new String[]{Manifest.permission.ACCESS_FINE_LOCATION}, 3);
-        }
-    }
 
     /** Opens the system ringtone picker, exactly like the Clock app does. */
     private void openSoundPicker() {

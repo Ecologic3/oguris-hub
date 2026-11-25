@@ -3,21 +3,15 @@ package app.oguri.hub.steps;
 import app.oguri.hub.R;
 import app.oguri.hub.UiKit;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.hardware.Sensor;
 import android.hardware.SensorManager;
-import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.os.Handler;
-import android.os.PowerManager;
-import android.provider.Settings;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
@@ -81,15 +75,10 @@ public class MainActivity extends Activity {
         UiKit.setSystemBars(this, BG);
         store = new StepStore(this);
 
-        if (Build.VERSION.SDK_INT >= 29
-                && checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
-                        != PackageManager.PERMISSION_GRANTED) {
-            requestPermissions(new String[]{Manifest.permission.ACTIVITY_RECOGNITION}, 1);
-        }
-        // No notification permission is ever requested: no
-        // notifications from this app at all. The counting service's
-        // mandatory system notification stays out of the drawer because
-        // the permission is not even declared.
+        // No permission is requested on open since 1.5: grants live
+        // on the hub's shared Permissions screen now. The counting
+        // service starts as before; once the activity permission is
+        // granted there, the next open registers the sensor.
         StepService.start(this);
         buildUi();
         refreshDynamic();
@@ -121,23 +110,9 @@ public class MainActivity extends Activity {
         }
     }
 
-    @Override
-    public void onRequestPermissionsResult(int requestCode, String[] permissions,
-                                             int[] grantResults) {
-        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
-        // Once the activity permission lands, (re)start counting so the
-        // sensor listener registers with the permission in place.
-        StepService.start(this);
-        buildUi();
-        refreshDynamic();
-    }
-
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
-        // Rebuild so the Setup rows show the permission state as it
-        // stands now (the Alarms model: state text plus faded
-        // buttons, refreshed on every resume).
         buildUi();
         handler.post(ticker);
         refreshDynamic();
@@ -172,7 +147,7 @@ public class MainActivity extends Activity {
         UiKit.applyRootPadding(this, root);
         scroll.addView(root);
 
-        root.addView(UiKit.header(this, "Oguri's Steps", TEXT,
+        root.addView(UiKit.header(this, "Steps", TEXT,
                 R.mipmap.ic_mod_steps));
         String dateStr = new SimpleDateFormat("EEEE d MMMM", Locale.UK).format(new Date());
         TextView sub = text(dateStr, 14, MUTED, false);
@@ -262,42 +237,12 @@ public class MainActivity extends Activity {
         histCard.addView(historyList);
         root.addView(histCard);
 
-        // Setup card. The two permission rows follow the Alarms
-        // model (since 1.3): the state text always stays visible,
-        // the button is always there, and a granted permission
-        // fades its button to GRANTED_ALPHA instead of removing it.
+        // Setup card. The two permission rows that lived here
+        // until 1.4 (physical activity, battery optimisation) are
+        // on the hub's shared Permissions screen since 1.5; what
+        // stays is counting control and the history exchange.
         LinearLayout setup = card();
         setup.addView(UiKit.sectionHeading(this, "Setup", TEXT));
-        setup.addView(setupRow("Physical activity permission",
-                hasActivityPermission() ? "Granted" : "Needed to read the step sensor",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        if (hasActivityPermission()) {
-                            Toast.makeText(MainActivity.this,
-                                    "Physical activity permission already granted",
-                                    Toast.LENGTH_SHORT).show();
-                        } else if (Build.VERSION.SDK_INT >= 29) {
-                            requestPermissions(new String[]{
-                                    Manifest.permission.ACTIVITY_RECOGNITION}, 1);
-                        }
-                    }
-                }, "Grant", hasActivityPermission()));
-        setup.addView(setupRow("Battery optimisation",
-                isBatteryExempt() ? "Exempt, counting will not be throttled"
-                        : "Exemption recommended so Android does not pause counting",
-                new View.OnClickListener() {
-                    @Override public void onClick(View v) {
-                        if (isBatteryExempt()) {
-                            Toast.makeText(MainActivity.this,
-                                    "Already exempt from battery optimisation",
-                                    Toast.LENGTH_SHORT).show();
-                            return;
-                        }
-                        Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
-                        i.setData(Uri.parse("package:" + getPackageName()));
-                        startActivity(i);
-                    }
-                }, "Open", isBatteryExempt()));
         setup.addView(setupRow("Counting",
                 store.paused() ? "Paused" : "Running",
                 new View.OnClickListener() {
@@ -317,7 +262,7 @@ public class MainActivity extends Activity {
                     @Override public void onClick(View v) {
                         Intent i = new Intent(Intent.ACTION_SEND);
                         i.setType("text/plain");
-                        i.putExtra(Intent.EXTRA_SUBJECT, "Oguri's Steps history");
+                        i.putExtra(Intent.EXTRA_SUBJECT, "Steps history");
                         i.putExtra(Intent.EXTRA_TEXT, store.toCsv());
                         startActivity(Intent.createChooser(i, "Export history"));
                     }
@@ -369,7 +314,8 @@ public class MainActivity extends Activity {
         texts.addView(text(detail, 13, MUTED, false));
         row.addView(texts);
         if (action != null) {
-            Button b = UiKit.button(this, buttonText);
+            Button b = UiKit.smallButton(this, buttonText, CHIPBG,
+                    UiKit.pressedOf(CHIPBG), TEXT);
             b.setAlpha(granted ? UiKit.GRANTED_ALPHA : 1.0f);
             b.setOnClickListener(action);
             row.addView(b);
@@ -383,14 +329,11 @@ public class MainActivity extends Activity {
         String[] names = {"7 days", "30 days", "90 days", "All time"};
         for (int i = 0; i < ranges.length; i++) {
             final int r = ranges[i];
-            Button b = UiKit.button(this, names[i]);
-            b.setTextSize(13);
             boolean selected = rangeDays == r;
-            GradientDrawable bg = new GradientDrawable();
-            bg.setCornerRadius(dp(20));
-            bg.setColor(selected ? ACCENT : Color.rgb(0x2A, 0x33, 0x47));
-            b.setBackground(bg);
-            b.setTextColor(selected ? Color.rgb(0x0B, 0x1F, 0x16) : TEXT);
+            Button b = UiKit.pillButton(this, names[i],
+                    selected ? ACCENT : CHIPBG,
+                    UiKit.pressedOf(selected ? ACCENT : CHIPBG), 0,
+                    selected ? Color.rgb(0x0B, 0x1F, 0x16) : TEXT);
             LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                     0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
             if (i > 0) lp.setMargins(dp(6), 0, 0, 0);
@@ -408,17 +351,6 @@ public class MainActivity extends Activity {
     }
 
     // ---------- Data refresh ----------
-
-    private boolean hasActivityPermission() {
-        return Build.VERSION.SDK_INT < 29
-                || checkSelfPermission(Manifest.permission.ACTIVITY_RECOGNITION)
-                        == PackageManager.PERMISSION_GRANTED;
-    }
-
-    private boolean isBatteryExempt() {
-        PowerManager pm = (PowerManager) getSystemService(POWER_SERVICE);
-        return pm != null && pm.isIgnoringBatteryOptimizations(getPackageName());
-    }
 
     private void refreshDynamic() {
         if (todayStepsView == null) return;

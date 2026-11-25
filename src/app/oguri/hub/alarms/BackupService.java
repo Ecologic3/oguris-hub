@@ -628,7 +628,7 @@ public class BackupService extends Service {
 
         Notification.Builder builder = new Notification.Builder(this, CHANNEL_ID)
                 .setSmallIcon(android.R.drawable.ic_lock_idle_alarm)
-                .setContentTitle("Oguri's Alarms")
+                .setContentTitle("Alarms")
                 .setContentText(ringing
                         ? "Backup alarm ringing · tap Stop"
                         : "Sound backup armed for " + title)

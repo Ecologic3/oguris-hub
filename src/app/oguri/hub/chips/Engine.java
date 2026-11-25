@@ -9,7 +9,7 @@ import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Poker chip engine for Oguri's Chips.
+ * Poker chip engine for Chips.
  * Two games:
  *  - HOLDEM: classical No-Limit Hold'em (blinds, preflop, min-raise rules).
  *  - OMAHA_BOMB: Omaha bomb pots (everyone antes, NO blinds, NO preflop;

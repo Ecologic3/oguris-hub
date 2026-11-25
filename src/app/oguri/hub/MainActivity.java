@@ -9,6 +9,7 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -29,22 +30,24 @@ public class MainActivity extends Activity {
     private static final int GOLD = Color.rgb(255, 209, 102);
 
     // Card titles match the module headers exactly, and each card's
-    // accent bar takes its module's own accent colour.
+    // accent bar takes its module's own accent colour. Since 1.5
+    // the modules carry no "Oguri's" prefix (the whole app is
+    // Oguri's Hub) and Chips sits last.
     private static final String[][] MODULES = {
-        {"Oguri's Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "139,92,246"},
-        {"Oguri's Steps", "Step counting, history and widget", "app.oguri.hub.steps", "61,220,151"},
-        {"Oguri's Chips", "Poker chip table and game engine", "app.oguri.hub.chips", "217,164,65"},
-        {"Oguri's Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "245,168,61"},
-        {"Oguri's VPN Switch", "Tailscale off at home, on away", "app.oguri.hub.vpn", "69,216,255"},
+        {"Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "139,92,246"},
+        {"Steps", "Step counting, history and widget", "app.oguri.hub.steps", "61,220,151"},
+        {"Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "245,168,61"},
+        {"VPN Switch", "Tailscale switching based on network", "app.oguri.hub.vpn", "69,216,255"},
+        {"Chips", "Poker chip table and game engine", "app.oguri.hub.chips", "217,164,65"},
     };
 
     // Each card carries its module's own standalone launcher icon.
     private static final int[] MODULE_ICONS = {
         R.mipmap.ic_mod_alarms,
         R.mipmap.ic_mod_steps,
-        R.mipmap.ic_mod_chips,
         R.mipmap.ic_mod_printer,
         R.mipmap.ic_mod_vpn,
+        R.mipmap.ic_mod_chips,
     };
 
     @Override
@@ -57,21 +60,45 @@ public class MainActivity extends Activity {
         root.setBackgroundColor(BG);
         UiKit.applyRootPadding(this, root);
 
-        TextView title = new TextView(this);
-        title.setText("Oguri's Hub");
-        title.setTextColor(GOLD);
-        title.setTextSize(30);
-        title.setTypeface(Typeface.DEFAULT_BOLD);
-        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+        // The shared header: the app name on the left, the hub's
+        // own icon at the top right, the spot every module header
+        // uses for its icon (since 1.5).
+        LinearLayout header = UiKit.header(this, "Oguri's Hub", GOLD,
+                R.mipmap.ic_launcher);
+        LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        titleLp.setMargins(0, 0, 0, dp(16));
-        title.setLayoutParams(titleLp);
-        root.addView(title);
+        headerLp.setMargins(0, 0, 0, dp(16));
+        header.setLayoutParams(headerLp);
+        root.addView(header);
 
         for (int i = 0; i < MODULES.length; i++) {
             root.addView(moduleCard(MODULES[i], MODULE_ICONS[i]));
         }
+
+        // The one Permissions entry (since 1.5): a small pill under
+        // the module cards, opening the shared Permissions screen.
+        LinearLayout pillRow = new LinearLayout(this);
+        pillRow.setOrientation(LinearLayout.HORIZONTAL);
+        pillRow.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams pillRowLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        pillRowLp.setMargins(0, dp(4), 0, 0);
+        pillRow.setLayoutParams(pillRowLp);
+        Button permissions = UiKit.pillButton(this, "Permissions", CARD,
+                UiKit.pressedOf(CARD), CARD_EDGE, MUTED);
+        permissions.setTextSize(14);
+        permissions.setPadding(dp(24), 0, dp(24), 0);
+        permissions.setOnClickListener(new View.OnClickListener() {
+            @Override public void onClick(View v) {
+                startActivity(new Intent(MainActivity.this,
+                        PermissionsActivity.class));
+            }
+        });
+        pillRow.addView(permissions, new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.WRAP_CONTENT, dp(40)));
+        root.addView(pillRow);
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(BG);

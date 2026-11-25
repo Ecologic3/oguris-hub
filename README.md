@@ -8,10 +8,45 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.4 (versionCode 5), minSdk 29,
+Package: `app.oguri.hub`, version 1.5 (versionCode 6), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.5
+
+Adam's eight-item list, approved item by item. The launcher icon
+is the approved orb scene (Oguri tending the hub's glowing ball),
+processed with the family's make_icons recipe (full art as the
+legacy icon, the art at 68% of the adaptive canvas with feathered
+edges, background re-sampled from the plate; reproducible with
+`python3 icon-src/make_hub_icon.py`), and the same art sits in the
+home header at the top right, where every module header carries
+its icon. The modules drop their "Oguri's" prefix everywhere
+(headers, home cards, notifications, the Steps widget label and
+history share subject): they are Alarms, Steps, Chips, Printer and
+VPN Switch now, inside Oguri's Hub. Permissions consolidate onto
+one shared screen, reached by a small pill button under the home
+cards: one card per module with every permission it needs, each
+row in the settled Alarms model (name, always-visible live status,
+a Grant or Open button faded to 0.45 once granted, never hidden).
+The modules' own permission sections are gone, and so are the
+open-time auto-requests (Alarms notifications/Bluetooth, Steps
+activity, VPN notifications): the shared screen owns every grant.
+Action-triggered requests stay (Printer still asks when Scan or a
+connect needs the permissions). Every button in the app now comes
+from the shared UiKit factories (standard / small / pill roles,
+one radius, one padding rhythm, shared pressed and disabled
+states); the only differences left are each module's colours and
+the role. The home cards run Alarms, Steps, Printer, VPN Switch,
+Chips (Chips last), and the VPN Switch card reads "Tailscale
+switching based on network". Chips' name entry is a themed dialog
+in its own warm brown and gold instead of the stock Android one,
+and Chips now remembers entered player names across games in its
+private on-device preferences, offered as quick-pick chips in
+that dialog. No module logic changed: the VPN service and prefs,
+the alarms scheduling and band stack, step counting, the chip
+engine and the printer transports are untouched.
 
 ### 1.4
 
@@ -105,7 +140,7 @@ must sit at the APK archive root, hence the zip from inside
 `build/dex`.
 
 ```sh
-./build.sh   # produces OguriHub-1.3.apk
+./build.sh   # produces OguriHub-1.5.apk
 ```
 
 The signing keystore (`oguris-hub.keystore`) is generated on first

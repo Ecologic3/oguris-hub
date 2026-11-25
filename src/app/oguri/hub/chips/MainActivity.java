@@ -71,11 +71,14 @@ public class MainActivity extends Activity {
         return g;
     }
     Button btn(String label, int bgColor, int txtColor, float sp) {
-        Button b = UiKit.button(this, label);
-        b.setTextColor(txtColor); b.setTextSize(sp);
-        b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        b.setBackground(roundBg(bgColor, 14, 0));
-        b.setPadding(dp(10), dp(10), dp(10), dp(10));
+        // The shared UiKit button factory since 1.5 (was a private
+        // style: bold text, radius 14, no pressed state). The
+        // caller's colours and text size stay, as they encode this
+        // game's control hierarchy; the chrome (states, radius,
+        // padding, sentence case) is the hub's.
+        Button b = UiKit.button(this, label, bgColor,
+                UiKit.pressedOf(bgColor), txtColor);
+        b.setTextSize(sp);
         return b;
     }
     LinearLayout card() {
@@ -119,12 +122,116 @@ public class MainActivity extends Activity {
     void toast(String s) { Toast.makeText(this, s, Toast.LENGTH_SHORT).show(); }
 
     void textDialog(String title, String initial, final java.util.function.Consumer<String> done) {
+        showInputDialog(title, initial, "OK", false, done);
+    }
+    void nameDialog(String title, String initial, final java.util.function.Consumer<String> done) {
+        showInputDialog(title, initial, "Save", true, done);
+    }
+
+    /**
+     * The themed input dialog (since 1.5): a warm brown card with a
+     * gold-edged field and sentence-case buttons, in this module's
+     * own UI language, replacing the stock AlertDialog the name and
+     * number prompts used before. Name entry additionally offers
+     * the remembered player names as quick-pick chips.
+     */
+    void showInputDialog(String title, String initial, String positiveLabel,
+                         final boolean nameEntry,
+                         final java.util.function.Consumer<String> done) {
+        final android.app.Dialog dialog = new android.app.Dialog(this);
+        dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+
+        LinearLayout panel = col();
+        panel.setBackground(roundBg(CARD, 16, BORDER));
+        panel.setPadding(dp(18), dp(16), dp(18), dp(16));
+        panel.addView(UiKit.sectionHeading(this, title, TXT));
+
         final EditText e = new EditText(this);
-        e.setText(initial); e.setTextColor(TXT); e.setSelectAllOnFocus(true);
-        new AlertDialog.Builder(this).setTitle(title).setView(e)
-            .setPositiveButton("OK", new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface d, int w) { done.accept(e.getText().toString().trim()); }
-            }).setNegativeButton("Cancel", null).show();
+        e.setText(initial);
+        e.setTextColor(TXT);
+        e.setTextSize(17);
+        e.setSingleLine(true);
+        e.setSelectAllOnFocus(true);
+        e.setBackground(roundBg(FIELD, 10, BORDER));
+        e.setPadding(dp(12), dp(10), dp(12), dp(10));
+        LinearLayout.LayoutParams ep = lpw();
+        ep.setMargins(0, dp(12), 0, 0);
+        panel.addView(e, ep);
+
+        if (nameEntry) {
+            List<String> known = knownNames();
+            if (!known.isEmpty()) {
+                TextView lab = tv("Recent players", 12.5f, DIM, true);
+                LinearLayout.LayoutParams labP = lpw();
+                labP.setMargins(dp(2), dp(12), 0, 0);
+                panel.addView(lab, labP);
+                LinearLayout chipRowLayout = null;
+                for (int i = 0; i < known.size(); i++) {
+                    if (i % 3 == 0) {
+                        chipRowLayout = new LinearLayout(this);
+                        chipRowLayout.setOrientation(LinearLayout.HORIZONTAL);
+                        LinearLayout.LayoutParams rp = lpw();
+                        rp.setMargins(0, dp(8), 0, 0);
+                        panel.addView(chipRowLayout, rp);
+                    }
+                    final String knownName = known.get(i);
+                    Button chip = btn(knownName, 0xFF332619, GOLD, 13.5f);
+                    chip.setOnClickListener(new View.OnClickListener() {
+                        public void onClick(View v) {
+                            rememberName(knownName);
+                            dialog.dismiss();
+                            done.accept(knownName);
+                        }
+                    });
+                    LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(
+                            ViewGroup.LayoutParams.WRAP_CONTENT,
+                            ViewGroup.LayoutParams.WRAP_CONTENT);
+                    if (i % 3 != 0) cp.setMargins(dp(8), 0, 0, 0);
+                    chipRowLayout.addView(chip, cp);
+                }
+            }
+        }
+
+        LinearLayout buttons = new LinearLayout(this);
+        buttons.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams bp = lpw();
+        bp.setMargins(0, dp(16), 0, 0);
+        Button cancel = btn("Cancel", CARD, DIM, 14);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) { dialog.dismiss(); }
+        });
+        buttons.addView(cancel, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
+        Button ok = btn(positiveLabel, GREEN, Color.WHITE, 14);
+        ok.setOnClickListener(new View.OnClickListener() {
+            public void onClick(View v) {
+                String s = e.getText().toString().trim();
+                if (nameEntry && !s.isEmpty()) rememberName(s);
+                dialog.dismiss();
+                done.accept(s);
+            }
+        });
+        LinearLayout.LayoutParams okP = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
+        okP.setMargins(dp(8), 0, 0, 0);
+        buttons.addView(ok, okP);
+        panel.addView(buttons, bp);
+
+        FrameLayout wrap = new FrameLayout(this);
+        wrap.setPadding(dp(24), 0, dp(24), 0);
+        wrap.addView(panel);
+        dialog.setContentView(wrap);
+        android.view.Window window = dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(new android.graphics.drawable.ColorDrawable(
+                    Color.TRANSPARENT));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            window.setSoftInputMode(
+                    android.view.WindowManager.LayoutParams.SOFT_INPUT_STATE_VISIBLE);
+        }
+        e.requestFocus();
+        dialog.show();
     }
     void numDialog(String title, int initial, final java.util.function.Consumer<Integer> done) {
         textDialog(title, String.valueOf(initial), new java.util.function.Consumer<String>() {
@@ -148,6 +255,40 @@ public class MainActivity extends Activity {
         if (s != null) { engine.decode(s); lastSavedAt = prefs().getLong("chips_savedAt", 0); }
     }
 
+    // ---------- remembered player names ----------
+    // Every name entered for a player is remembered across games,
+    // most recent first, in this module's private SharedPreferences
+    // (app-private on-device storage only; never the repo or any
+    // shipped file), and offered as quick-pick chips in the name
+    // dialog.
+    static final String KEY_KNOWN_NAMES = "chips_known_names";
+    static final int MAX_KNOWN_NAMES = 12;
+    List<String> knownNames() {
+        List<String> out = new ArrayList<String>();
+        String raw = prefs().getString(KEY_KNOWN_NAMES, "");
+        if (raw != null && !raw.isEmpty()) {
+            for (String n : raw.split("\n")) {
+                String t = n.trim();
+                if (!t.isEmpty() && !out.contains(t)) out.add(t);
+            }
+        }
+        return out;
+    }
+    void rememberName(String name) {
+        String t = name == null ? "" : name.trim();
+        if (t.isEmpty()) return;
+        List<String> names = knownNames();
+        names.remove(t);
+        names.add(0, t);
+        while (names.size() > MAX_KNOWN_NAMES) names.remove(names.size() - 1);
+        StringBuilder sb = new StringBuilder();
+        for (int i = 0; i < names.size(); i++) {
+            if (i > 0) sb.append("\n");
+            sb.append(names.get(i));
+        }
+        prefs().edit().putString(KEY_KNOWN_NAMES, sb.toString()).apply();
+    }
+
     // ---------- app ----------
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
@@ -164,8 +305,8 @@ public class MainActivity extends Activity {
         return iv;
     }
     Button undoButton() {
-        Button u = btn("Undo", GOLD, 0xFF231A02, 13.5f);
-        u.setPadding(dp(14), dp(7), dp(14), dp(7));
+        Button u = UiKit.smallButton(this, "Undo", GOLD,
+                UiKit.pressedOf(GOLD), 0xFF231A02);
         u.setEnabled(engine.canUndo());
         u.setAlpha(engine.canUndo() ? 1f : 0.4f);
         u.setOnClickListener(new View.OnClickListener() {
@@ -200,8 +341,8 @@ public class MainActivity extends Activity {
         if (sub != null) t.addView(tv(sub, 12.5f, DIM, false));
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         bar.addView(t, tp);
-        Button menu = btn("Menu", 0xFF332619, GOLD, 13.5f);
-        menu.setPadding(dp(14), dp(7), dp(14), dp(7));
+        Button menu = UiKit.smallButton(this, "Menu", 0xFF332619,
+                UiKit.pressedOf(0xFF332619), GOLD);
         menu.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { showMenu(); }
         });
@@ -224,7 +365,7 @@ public class MainActivity extends Activity {
         // The shared module header since 1.3 (was 26sp in gold,
         // where every other module title is 30sp near-white; gold
         // stays as the module's accent elsewhere).
-        root.addView(UiKit.header(this, "Oguri's Chips", TXT,
+        root.addView(UiKit.header(this, "Chips", TXT,
                 R.mipmap.ic_mod_chips));
 
         if (hasSave()) {
@@ -279,7 +420,7 @@ public class MainActivity extends Activity {
             nm.setPadding(dp(10), 0, 0, 0);
             nm.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    textDialog("Player name", pl.name, new java.util.function.Consumer<String>() {
+                    nameDialog("Player name", pl.name, new java.util.function.Consumer<String>() {
                         public void accept(String s) { if (!s.isEmpty()) { pl.name = s; showSetup(); } }
                     });
                 }
@@ -304,7 +445,7 @@ public class MainActivity extends Activity {
             Button add = btn("＋ Add player", CARD, GOLD, 15);
             add.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
-                    textDialog("New player", "", new java.util.function.Consumer<String>() {
+                    nameDialog("New player", "", new java.util.function.Consumer<String>() {
                         public void accept(String s) {
                             if (s.isEmpty()) return;
                             int seat = firstFreeSeat();
@@ -610,7 +751,6 @@ public class MainActivity extends Activity {
             LinearLayout.LayoutParams rp2 = lpw(); rp2.setMargins(0, dp(8), 0, 0);
             root.addView(row, rp2);
             Button end = btn("End session", 0xFF1A1216, RED, 13);
-            end.setPadding(dp(10), dp(5), dp(10), dp(5));
             end.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) { showSettlement(); }
             });
@@ -646,19 +786,16 @@ public class MainActivity extends Activity {
         actions.setOrientation(LinearLayout.HORIZONTAL);
         // action order: Bet/Raise first (coloured), then Check/Call, then Fold
         final Button raiseBtn = btn(engine.currentBet == 0 ? "Bet…" : "Raise…", GOLD, 0xFF231A02, 17);
-        raiseBtn.setPadding(dp(8), dp(14), dp(8), dp(14));
         boolean canRaise = actor.canRaise && engine.maxRaiseTo(actor) > engine.currentBet;
         raiseBtn.setEnabled(canRaise); raiseBtn.setAlpha(canRaise ? 1f : 0.4f);
         raiseBtn.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { raiseOpen = true; raiseVal = raiseFloor(actor); showTable(); }
         });
         Button cc = btn(call > 0 ? "Call " + call : "Check", 0xFF14301F, 0xFF5FE39A, 17);
-        cc.setPadding(dp(8), dp(14), dp(8), dp(14));
         cc.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { engine.actCheckCall(); afterEngineAction(); }
         });
         Button fold = btn("Fold", 0xFF3A1620, RED, 17);
-        fold.setPadding(dp(8), dp(14), dp(8), dp(14));
         fold.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { engine.actFold(); afterEngineAction(); }
         });
@@ -1024,7 +1161,7 @@ public class MainActivity extends Activity {
         copy.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 StringBuilder sb = new StringBuilder();
-                sb.append("Oguri's Chips — session summary\n");
+                sb.append("Chips — session summary\n");
                 for (Player pl : engine.bySeat()) {
                     int net = pl.stack - pl.totalIn;
                     sb.append(pl.name).append(": in ").append(pl.totalIn)

@@ -140,7 +140,7 @@ public final class BandSession {
                 && mAppCtx.checkSelfPermission(Manifest.permission.BLUETOOTH_CONNECT)
                 != PackageManager.PERMISSION_GRANTED) {
             throw new BandException("Bluetooth permission not granted "
-                    + "(allow Nearby devices for Oguri's Alarms)");
+                    + "(allow Nearby devices for Alarms)");
         }
         if (Build.VERSION.SDK_INT <= 30
                 && mAppCtx.checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)

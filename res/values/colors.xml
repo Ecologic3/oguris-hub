@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <color name="ic_bg">#0D2030</color>
+    <color name="ic_bg">#08101D</color>
     <!-- Each module icon keeps its standalone app's plate colour. -->
     <color name="ic_mod_alarms_bg">#432079</color>
     <color name="ic_mod_steps_bg">#214758</color>
