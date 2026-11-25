@@ -33,7 +33,7 @@ public class MainActivity extends Activity {
         {"Steps", "Step counting, history and widget", "app.oguri.hub.steps", "105,240,174"},
         {"Chips", "Poker chip table and game engine", "app.oguri.hub.chips", "255,213,79"},
         {"Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "130,177,255"},
-        {"VPN Switch", "Tailscale off at home, on away", "app.oguri.hub.vpn", "179,157,217"},
+        {"Oguri's VPN Switch", "Tailscale off at home, on away", "app.oguri.hub.vpn", "179,157,217"},
     };
 
     // Each card carries its module's own standalone launcher icon.

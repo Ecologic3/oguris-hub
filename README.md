@@ -8,10 +8,24 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.1 (versionCode 2), minSdk 29,
+Package: `app.oguri.hub`, version 1.2 (versionCode 3), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.2
+
+The VPN module catches up with the standalone app's final UI pass
+(Oguri's VPN Switch 1.10, which landed after the hub's 1.0 port).
+The module header now follows the hub's module convention (name on
+the left, the module's own icon at the top right) and reads
+"Oguri's VPN Switch", as does the home-screen card. The "Tailscale
+off on your home WiFi, on everywhere else." subheader is gone, all
+buttons are sentence case instead of all caps, and the permission
+buttons phase out once granted: each disappears when its
+permission is in place, and the whole permissions card goes once
+both are granted. The module's switching logic, its midnight
+indigo colors and every other module are unchanged.
 
 ### 1.1
 
@@ -47,7 +61,7 @@ must sit at the APK archive root, hence the zip from inside
 `build/dex`.
 
 ```sh
-./build.sh   # produces OguriHub-1.1.apk
+./build.sh   # produces OguriHub-1.2.apk
 ```
 
 The signing keystore (`oguris-hub.keystore`) is generated on first
