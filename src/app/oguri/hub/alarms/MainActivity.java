@@ -1,6 +1,7 @@
 package app.oguri.hub.alarms;
 
 import app.oguri.hub.R;
+import app.oguri.hub.UiKit;
 
 import android.Manifest;
 import android.app.Activity;
@@ -110,8 +111,10 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(0xFF150A2E);
-        getWindow().setNavigationBarColor(0xFF2A1065);
+        // Both bars take the gradient's top colour, so the screen
+        // reads as one surface (before 1.3 the nav bar took the
+        // gradient's middle stop instead).
+        UiKit.setSystemBars(this, 0xFF150A2E);
         setContentView(buildUi());
         requestNotificationPermissionIfNeeded();
         requestBluetoothPermissionIfNeeded();
@@ -173,31 +176,13 @@ public class MainActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(20), dp(28), dp(20), dp(28));
+        UiKit.applyRootPadding(this, root);
         scroll.addView(root, new ScrollView.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
-        LinearLayout headerRow = new LinearLayout(this);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        root.addView(headerRow, new LinearLayout.LayoutParams(
+        root.addView(UiKit.header(this, "Oguri's Alarms", COLOR_TEXT,
+                R.mipmap.ic_mod_alarms), new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
-
-        TextView header = new TextView(this);
-        header.setText("Oguri's Alarms");
-        header.setTextSize(30);
-        header.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        header.setTextColor(COLOR_TEXT);
-        headerRow.addView(header, new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-
-        try {
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.mipmap.ic_mod_alarms);
-            headerRow.addView(icon, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        } catch (Exception ignored) {
-            // No icon is cosmetic only; the header works without it.
-        }
 
         // Slim band status row directly under the header: the last
         // battery level read from the band (during alarm/time sync
@@ -251,7 +236,7 @@ public class MainActivity extends Activity {
         });
         LinearLayout.LayoutParams addParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        addParams.bottomMargin = dp(16);
+        addParams.bottomMargin = dp(UiKit.CARD_SPACING_DP);
         mAddButton.setLayoutParams(addParams);
         root.addView(mAddButton);
 
@@ -281,7 +266,7 @@ public class MainActivity extends Activity {
         card.setBackground(glassBackground());
         LinearLayout.LayoutParams cardParams = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        cardParams.bottomMargin = dp(16);
+        cardParams.bottomMargin = dp(UiKit.CARD_SPACING_DP);
         card.setLayoutParams(cardParams);
         views.root = card;
 
@@ -468,12 +453,7 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         card.setLayoutParams(cardParams);
 
-        TextView heading = new TextView(this);
-        heading.setText("Setup");
-        heading.setTextSize(18);
-        heading.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        heading.setTextColor(COLOR_TEXT);
-        card.addView(heading);
+        card.addView(UiKit.sectionHeading(this, "Setup", COLOR_TEXT));
 
         mSetupStatus = new TextView(this);
         mSetupStatus.setTextSize(13);
@@ -561,11 +541,9 @@ public class MainActivity extends Activity {
     }
 
     private Button makeButton(String text) {
-        Button button = new Button(this);
-        button.setText(text);
+        Button button = UiKit.button(this, text);
         button.setTextColor(Color.WHITE);
         button.setTextSize(14);
-        button.setAllCaps(false);
         GradientDrawable bg = new GradientDrawable();
         bg.setColor(COLOR_ACCENT);
         bg.setCornerRadius(dp(14));

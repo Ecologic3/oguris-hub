@@ -1,6 +1,7 @@
 package app.oguri.hub.steps;
 
 import app.oguri.hub.R;
+import app.oguri.hub.UiKit;
 
 import android.Manifest;
 import android.app.Activity;
@@ -37,7 +38,9 @@ import java.util.Map;
 
 public class MainActivity extends Activity {
     private static final int REQ_IMPORT = 7;
-    private static final int BG = Color.rgb(0x0F, 0x14, 0x1F);
+    // The shared hub background since 1.3 (was a near-identical
+    // private navy, #0F141F, before the unification).
+    private static final int BG = UiKit.BG;
     private static final int CARD = Color.rgb(0x1B, 0x22, 0x33);
     private static final int TEXT = Color.WHITE;
     private static final int MUTED = Color.rgb(0x94, 0xA3, 0xB8);
@@ -75,6 +78,7 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        UiKit.setSystemBars(this, BG);
         store = new StepStore(this);
 
         if (Build.VERSION.SDK_INT >= 29
@@ -131,6 +135,10 @@ public class MainActivity extends Activity {
     @Override protected void onResume() {
         super.onResume();
         resumed = true;
+        // Rebuild so the Setup rows show the permission state as it
+        // stands now (the Alarms model: state text plus faded
+        // buttons, refreshed on every resume).
+        buildUi();
         handler.post(ticker);
         refreshDynamic();
     }
@@ -143,23 +151,8 @@ public class MainActivity extends Activity {
 
     // ---------- UI construction ----------
 
-    private GradientDrawable cardBg() {
-        GradientDrawable d = new GradientDrawable();
-        d.setColor(CARD);
-        d.setCornerRadius(dp(16));
-        return d;
-    }
-
     private LinearLayout card() {
-        LinearLayout l = new LinearLayout(this);
-        l.setOrientation(LinearLayout.VERTICAL);
-        l.setBackground(cardBg());
-        l.setPadding(dp(18), dp(16), dp(18), dp(16));
-        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
-                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, dp(14));
-        l.setLayoutParams(lp);
-        return l;
+        return UiKit.card(this, CARD, 0);
     }
 
     private TextView text(String s, float sp, int color, boolean bold) {
@@ -176,26 +169,11 @@ public class MainActivity extends Activity {
         scroll.setBackgroundColor(BG);
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setPadding(dp(18), dp(22), dp(18), dp(22));
+        UiKit.applyRootPadding(this, root);
         scroll.addView(root);
 
-        // Header row, same as Oguri's Alarms: app name left, the
-        // module's own icon at the top right.
-        LinearLayout headerRow = new LinearLayout(this);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        root.addView(headerRow);
-        TextView title = text("Oguri's Steps", 30, TEXT, true);
-        title.setLayoutParams(new LinearLayout.LayoutParams(
-                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
-        headerRow.addView(title);
-        try {
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.mipmap.ic_mod_steps);
-            headerRow.addView(icon, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        } catch (Exception ignored) {
-            // The icon is cosmetic only; the header works without it.
-        }
+        root.addView(UiKit.header(this, "Oguri's Steps", TEXT,
+                R.mipmap.ic_mod_steps));
         String dateStr = new SimpleDateFormat("EEEE d MMMM", Locale.UK).format(new Date());
         TextView sub = text(dateStr, 14, MUTED, false);
         LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(
@@ -234,7 +212,7 @@ public class MainActivity extends Activity {
 
         // History card: chips + summary + chart + list
         LinearLayout histCard = card();
-        histCard.addView(text("History", 18, TEXT, true));
+        histCard.addView(UiKit.sectionHeading(this, "History", TEXT));
         chipRow = new LinearLayout(this);
         chipRow.setOrientation(LinearLayout.HORIZONTAL);
         LinearLayout.LayoutParams chipLp = new LinearLayout.LayoutParams(
@@ -284,29 +262,42 @@ public class MainActivity extends Activity {
         histCard.addView(historyList);
         root.addView(histCard);
 
-        // Setup card
+        // Setup card. The two permission rows follow the Alarms
+        // model (since 1.3): the state text always stays visible,
+        // the button is always there, and a granted permission
+        // fades its button to GRANTED_ALPHA instead of removing it.
         LinearLayout setup = card();
-        setup.addView(text("Setup", 18, TEXT, true));
+        setup.addView(UiKit.sectionHeading(this, "Setup", TEXT));
         setup.addView(setupRow("Physical activity permission",
                 hasActivityPermission() ? "Granted" : "Needed to read the step sensor",
-                hasActivityPermission() ? null : new View.OnClickListener() {
+                new View.OnClickListener() {
                     @Override public void onClick(View v) {
-                        if (Build.VERSION.SDK_INT >= 29) {
+                        if (hasActivityPermission()) {
+                            Toast.makeText(MainActivity.this,
+                                    "Physical activity permission already granted",
+                                    Toast.LENGTH_SHORT).show();
+                        } else if (Build.VERSION.SDK_INT >= 29) {
                             requestPermissions(new String[]{
                                     Manifest.permission.ACTIVITY_RECOGNITION}, 1);
                         }
                     }
-                }, "Grant"));
+                }, "Grant", hasActivityPermission()));
         setup.addView(setupRow("Battery optimisation",
                 isBatteryExempt() ? "Exempt, counting will not be throttled"
                         : "Exemption recommended so Android does not pause counting",
-                isBatteryExempt() ? null : new View.OnClickListener() {
+                new View.OnClickListener() {
                     @Override public void onClick(View v) {
+                        if (isBatteryExempt()) {
+                            Toast.makeText(MainActivity.this,
+                                    "Already exempt from battery optimisation",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         Intent i = new Intent(Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
                         i.setData(Uri.parse("package:" + getPackageName()));
                         startActivity(i);
                     }
-                }, "Open"));
+                }, "Open", isBatteryExempt()));
         setup.addView(setupRow("Counting",
                 store.paused() ? "Paused" : "Running",
                 new View.OnClickListener() {
@@ -346,16 +337,23 @@ public class MainActivity extends Activity {
                 }, "Import"));
         root.addView(setup);
 
-        TextView foot = text("Counts with the phone's hardware step sensor. "
-                + "History is stored only on this phone, for as long as you keep the app.",
-                12.5f, MUTED, false);
-        root.addView(foot);
-
         setContentView(scroll);
     }
 
     private LinearLayout setupRow(String title, String detail,
                                     final View.OnClickListener action, String buttonText) {
+        return setupRow(title, detail, action, buttonText, false);
+    }
+
+    /**
+     * One Setup row: title, state/detail text, and an action button.
+     * With {@code granted} set (a permission already in place) the
+     * button fades to the shared granted alpha instead of being
+     * left out, the Alarms model.
+     */
+    private LinearLayout setupRow(String title, String detail,
+                                    final View.OnClickListener action, String buttonText,
+                                    boolean granted) {
         LinearLayout row = new LinearLayout(this);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -371,8 +369,8 @@ public class MainActivity extends Activity {
         texts.addView(text(detail, 13, MUTED, false));
         row.addView(texts);
         if (action != null) {
-            Button b = new Button(this);
-            b.setText(buttonText);
+            Button b = UiKit.button(this, buttonText);
+            b.setAlpha(granted ? UiKit.GRANTED_ALPHA : 1.0f);
             b.setOnClickListener(action);
             row.addView(b);
         }
@@ -385,8 +383,7 @@ public class MainActivity extends Activity {
         String[] names = {"7 days", "30 days", "90 days", "All time"};
         for (int i = 0; i < ranges.length; i++) {
             final int r = ranges[i];
-            Button b = new Button(this);
-            b.setText(names[i]);
+            Button b = UiKit.button(this, names[i]);
             b.setTextSize(13);
             boolean selected = rangeDays == r;
             GradientDrawable bg = new GradientDrawable();

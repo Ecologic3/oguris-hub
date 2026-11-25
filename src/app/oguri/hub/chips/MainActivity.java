@@ -28,6 +28,7 @@ import android.widget.TextView;
 import android.widget.Toast;
 
 import app.oguri.hub.R;
+import app.oguri.hub.UiKit;
 import app.oguri.hub.chips.Engine;
 import app.oguri.hub.chips.Engine.Game;
 import app.oguri.hub.chips.Engine.Player;
@@ -70,32 +71,27 @@ public class MainActivity extends Activity {
         return g;
     }
     Button btn(String label, int bgColor, int txtColor, float sp) {
-        Button b = new Button(this);
-        b.setText(label); b.setTextColor(txtColor); b.setTextSize(sp);
+        Button b = UiKit.button(this, label);
+        b.setTextColor(txtColor); b.setTextSize(sp);
         b.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
-        b.setAllCaps(false);
         b.setBackground(roundBg(bgColor, 14, 0));
         b.setPadding(dp(10), dp(10), dp(10), dp(10));
         return b;
     }
     LinearLayout card() {
-        LinearLayout l = new LinearLayout(this);
-        l.setOrientation(LinearLayout.VERTICAL);
-        l.setBackground(roundBg(CARD, 16, BORDER));
-        l.setPadding(dp(14), dp(12), dp(14), dp(12));
-        LinearLayout.LayoutParams p = lpw(); p.setMargins(0, dp(6), 0, dp(6));
-        l.setLayoutParams(p);
-        return l;
+        return UiKit.card(this, CARD, BORDER);
     }
     TextView label(String s) {
-        TextView t = tv(s.toUpperCase(), 11.5f, DIM, true);
+        // The shared section heading since 1.3 (was an upper-cased
+        // 11.5sp dim label, the only all-caps heading in the hub).
+        TextView t = UiKit.sectionHeading(this, s, TXT);
         LinearLayout.LayoutParams p = lpw(); p.setMargins(dp(2), dp(12), 0, dp(4));
         t.setLayoutParams(p);
         return t;
     }
     ScrollView page(LinearLayout root) {
         ScrollView sv = new ScrollView(this);
-        root.setPadding(dp(16), dp(10), dp(16), dp(20));
+        UiKit.applyRootPadding(this, root);
         root.setBackgroundColor(BG);
         sv.addView(root);
         sv.setBackgroundColor(BG);
@@ -155,6 +151,7 @@ public class MainActivity extends Activity {
     // ---------- app ----------
     @Override protected void onCreate(Bundle b) {
         super.onCreate(b);
+        UiKit.setSystemBars(this, BG);
         engine = new Engine();
         addDefaultPlayers(engine);
         showSetup();
@@ -167,7 +164,7 @@ public class MainActivity extends Activity {
         return iv;
     }
     Button undoButton() {
-        Button u = btn("↩ Undo", GOLD, 0xFF231A02, 13.5f);
+        Button u = btn("Undo", GOLD, 0xFF231A02, 13.5f);
         u.setPadding(dp(14), dp(7), dp(14), dp(7));
         u.setEnabled(engine.canUndo());
         u.setAlpha(engine.canUndo() ? 1f : 0.4f);
@@ -196,11 +193,14 @@ public class MainActivity extends Activity {
         bar.setOrientation(LinearLayout.HORIZONTAL);
         bar.setGravity(Gravity.CENTER_VERTICAL);
         LinearLayout t = col();
-        t.addView(tv(title, 20, TXT, true));
+        // Gameplay header: the shared convention's size and colour
+        // (30sp, near-white) since 1.3; Menu/Undo stay, they are
+        // game controls, not chrome.
+        t.addView(tv(title, 30, TXT, true));
         if (sub != null) t.addView(tv(sub, 12.5f, DIM, false));
         LinearLayout.LayoutParams tp = new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1);
         bar.addView(t, tp);
-        Button menu = btn("☰ Menu", 0xFF332619, GOLD, 13.5f);
+        Button menu = btn("Menu", 0xFF332619, GOLD, 13.5f);
         menu.setPadding(dp(14), dp(7), dp(14), dp(7));
         menu.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { showMenu(); }
@@ -210,9 +210,9 @@ public class MainActivity extends Activity {
         mp.setMargins(0, 0, dp(8), 0);
         bar.addView(menu, mp);
         bar.addView(undoButton());
-        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(44), dp(44));
+        LinearLayout.LayoutParams ip = new LinearLayout.LayoutParams(dp(48), dp(48));
         ip.setMargins(dp(8), 0, 0, 0);
-        bar.addView(appIcon(44), ip);
+        bar.addView(appIcon(48), ip);
         return bar;
     }
 
@@ -221,13 +221,11 @@ public class MainActivity extends Activity {
     void showSetup() {
         screen = "setup";
         LinearLayout root = col();
-        LinearLayout head = new LinearLayout(this);
-        head.setOrientation(LinearLayout.HORIZONTAL);
-        head.setGravity(Gravity.CENTER_VERTICAL);
-        TextView title = tv("Oguri's Chips", 26, GOLD, true);
-        head.addView(title, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-        head.addView(appIcon(48), new LinearLayout.LayoutParams(dp(48), dp(48)));
-        root.addView(head);
+        // The shared module header since 1.3 (was 26sp in gold,
+        // where every other module title is 30sp near-white; gold
+        // stays as the module's accent elsewhere).
+        root.addView(UiKit.header(this, "Oguri's Chips", TXT,
+                R.mipmap.ic_mod_chips));
 
         if (hasSave()) {
             LinearLayout c = card();
@@ -287,7 +285,7 @@ public class MainActivity extends Activity {
                 }
             });
             row.addView(nm, new LinearLayout.LayoutParams(0, ViewGroup.LayoutParams.WRAP_CONTENT, 1));
-            Button seat = btn("🪑 Seat " + pl.seat + " ▾", 0xFF332619, GOLD, 14);
+            Button seat = btn("Seat " + pl.seat + " ▾", 0xFF332619, GOLD, 14);
             seat.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) { cycleSeat(pl); showSetup(); }
             });
@@ -555,7 +553,7 @@ public class MainActivity extends Activity {
         });
         LinearLayout.LayoutParams bp = lpw(); bp.setMargins(0, dp(14), 0, 0);
         root.addView(back, bp);
-        Button sv = btn("💾 Save game now", 0xFF332619, TXT, 14);
+        Button sv = btn("Save game now", 0xFF332619, TXT, 14);
         sv.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) { saveGame(true); }
         });
@@ -594,14 +592,14 @@ public class MainActivity extends Activity {
             root.addView(deal, np);
             LinearLayout row = new LinearLayout(this);
             row.setOrientation(LinearLayout.HORIZONTAL);
-            Button sw = btn(engine.game == Game.HOLDEM ? "⇄ To Omaha" : "⇄ To Hold'em", 0xFF332619, GOLD, 14);
+            Button sw = btn(engine.game == Game.HOLDEM ? "To Omaha" : "To Hold'em", 0xFF332619, GOLD, 14);
             sw.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) {
                     engine.game = engine.game == Game.HOLDEM ? Game.OMAHA_BOMB : Game.HOLDEM;
                     saveGame(false); showTable();
                 }
             });
-            Button setup2 = btn("☰ Menu", 0xFF332619, TXT, 14);
+            Button setup2 = btn("Menu", 0xFF332619, TXT, 14);
             setup2.setOnClickListener(new View.OnClickListener() {
                 public void onClick(View v) { showPreHand(); }
             });
@@ -1022,7 +1020,7 @@ public class MainActivity extends Activity {
             sc.addView(row);
         }
         root.addView(sc);
-        Button copy = btn("📋 Copy summary", 0xFF332619, TXT, 15);
+        Button copy = btn("Copy summary", 0xFF332619, TXT, 15);
         copy.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
                 StringBuilder sb = new StringBuilder();

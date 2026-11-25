@@ -1,6 +1,7 @@
 package app.oguri.hub.vpn;
 
 import app.oguri.hub.R;
+import app.oguri.hub.UiKit;
 
 import android.Manifest;
 import android.app.Activity;
@@ -38,16 +39,20 @@ import java.util.List;
  * VPN Switch's own "midnight indigo" theme (since 1.9): deep
  * blue-slate surfaces, pale text, and a signal-cyan accent that is
  * used sparingly (the monitoring-on state, the add-current action,
- * section accents). Deliberately not shared with the other Oguri
- * apps or the mnemosyne dashboard. All styling is programmatic:
- * colors, rounded GradientDrawable backgrounds and padding in code.
+ * section accents). Since 1.3 the screen background is the hub's
+ * shared background (UiKit.BG) and the geometry comes from the
+ * shared UiKit; the surfaces and the accent stay the module's own.
+ * All styling is programmatic: colors, rounded GradientDrawable
+ * backgrounds and padding in code.
  */
 public class MainActivity extends Activity {
     private static final int REQ_LOCATION = 1;
     private static final int REQ_NOTIFICATIONS = 2;
     private static final String TS_PACKAGE = "com.tailscale.ipn";
 
-    private static final int COL_BG = 0xFF0F1626;
+    // The shared hub background since 1.3 (was a near-identical
+    // private navy, #0F1626, before the unification).
+    private static final int COL_BG = UiKit.BG;
     private static final int COL_SURFACE = 0xFF1A2338;
     private static final int COL_RAISED = 0xFF232F4D;
     private static final int COL_BORDER = 0xFF2C3B5F;
@@ -75,6 +80,7 @@ public class MainActivity extends Activity {
     private Button logToggleButton;
     private Button addCurrentButton;
     private LinearLayout permCard;
+    private TextView permStatus;
     private Button permButton;
     private Button batteryButton;
     private LinearLayout networksContainer;
@@ -133,33 +139,19 @@ public class MainActivity extends Activity {
     private LinearLayout makeCard(int topMarginDp) {
         LinearLayout card = new LinearLayout(this);
         card.setOrientation(LinearLayout.VERTICAL);
-        GradientDrawable bg = rounded(COL_SURFACE, 14);
-        bg.setStroke(dp(1), COL_BORDER);
-        card.setBackground(bg);
-        card.setPadding(dp(16), dp(14), dp(16), dp(14));
+        card.setBackground(UiKit.cardBackground(this, COL_SURFACE, COL_BORDER));
+        card.setPadding(dp(UiKit.CARD_PAD_H_DP), dp(UiKit.CARD_PAD_V_DP),
+                dp(UiKit.CARD_PAD_H_DP), dp(UiKit.CARD_PAD_V_DP));
         card.setLayoutParams(lp(topMarginDp));
         return card;
     }
 
     private void addSectionHeader(LinearLayout parent, String label) {
-        TextView t = new TextView(this);
-        t.setText(label);
-        t.setTextSize(16);
-        t.setTextColor(COL_TEXT);
-        t.setTypeface(Typeface.DEFAULT_BOLD);
-        parent.addView(t);
-        View bar = new View(this);
-        bar.setBackgroundColor(COL_ACCENT);
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(dp(30), dp(2));
-        blp.topMargin = dp(5);
-        bar.setLayoutParams(blp);
-        parent.addView(bar);
+        parent.addView(UiKit.sectionHeading(this, label, COL_TEXT));
     }
 
     private Button makeButton(String label, View.OnClickListener listener) {
-        Button b = new Button(this);
-        b.setText(label);
-        b.setAllCaps(false);
+        Button b = UiKit.button(this, label);
         b.setTextSize(15);
         b.setTextColor(COL_TEXT);
         b.setBackground(buttonBg(COL_BTN, COL_BTN_PRESSED, COL_BTN_DISABLED));
@@ -180,8 +172,7 @@ public class MainActivity extends Activity {
 
     private void buildUi() {
         getWindow().setBackgroundDrawable(new ColorDrawable(COL_BG));
-        getWindow().setStatusBarColor(COL_BG);
-        getWindow().setNavigationBarColor(COL_BG);
+        UiKit.setSystemBars(this, COL_BG);
         View decor = getWindow().getDecorView();
         decor.setSystemUiVisibility(decor.getSystemUiVisibility()
                 & ~View.SYSTEM_UI_FLAG_LIGHT_STATUS_BAR
@@ -190,28 +181,12 @@ public class MainActivity extends Activity {
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(COL_BG);
-        root.setPadding(dp(20), dp(20), dp(20), dp(24));
+        UiKit.applyRootPadding(this, root);
 
-        // Header row, the hub's module convention (the same shape as
-        // Alarms and Steps): the module name on the left and the
-        // module's own icon at the top right.
-        LinearLayout headerRow = new LinearLayout(this);
-        headerRow.setOrientation(LinearLayout.HORIZONTAL);
-        headerRow.setGravity(Gravity.CENTER_VERTICAL);
-        root.addView(headerRow);
-
-        TextView title = makeText("Oguri's VPN Switch", 30, COL_TEXT);
-        title.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
-        headerRow.addView(title, new LinearLayout.LayoutParams(
-                0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
-
-        try {
-            ImageView icon = new ImageView(this);
-            icon.setImageResource(R.mipmap.ic_mod_vpn);
-            headerRow.addView(icon, new LinearLayout.LayoutParams(dp(48), dp(48)));
-        } catch (Exception ignored) {
-            // No icon is cosmetic only; the header works without it.
-        }
+        // The shared module header: name on the left, the module's
+        // own icon at the top right.
+        root.addView(UiKit.header(this, "Oguri's VPN Switch", COL_TEXT,
+                R.mipmap.ic_mod_vpn));
 
         // Status block.
         LinearLayout statusCard = makeCard(16);
@@ -276,13 +251,12 @@ public class MainActivity extends Activity {
         toggleButton.setLayoutParams(lp(14));
         root.addView(toggleButton);
 
-        // Permissions: explanation text, then the two buttons. The
-        // buttons phase out in refresh() once granted (see there).
+        // Permissions, the Alarms model: an always-visible status
+        // line, then the two buttons. A granted permission fades
+        // its button in refresh(); nothing is ever removed.
         permCard = makeCard(12);
-        TextView permInfo = makeText("Android requires location permission to read "
-                + "the WiFi name. Without it the app cannot tell home WiFi from "
-                + "any other network.", 14, COL_MUTED);
-        permCard.addView(permInfo);
+        permStatus = makeText("", 14, COL_MUTED);
+        permCard.addView(permStatus);
 
         permButton = makeButton("Grant location permission",
                 new View.OnClickListener() {
@@ -307,6 +281,15 @@ public class MainActivity extends Activity {
                 new View.OnClickListener() {
                     @Override
                     public void onClick(View v) {
+                        PowerManager pm = (PowerManager) getSystemService(
+                                Context.POWER_SERVICE);
+                        if (pm != null && pm.isIgnoringBatteryOptimizations(
+                                getPackageName())) {
+                            Toast.makeText(MainActivity.this,
+                                    "Battery exemption already granted",
+                                    Toast.LENGTH_SHORT).show();
+                            return;
+                        }
                         try {
                             Intent i = new Intent(
                                     Settings.ACTION_REQUEST_IGNORE_BATTERY_OPTIMIZATIONS);
@@ -323,11 +306,9 @@ public class MainActivity extends Activity {
         permCard.addView(batteryButton);
         root.addView(permCard);
 
-        hintUnknown = makeText("WiFi name is hidden right now. Android only reveals "
-                + "it with location permission granted and location services "
-                + "switched on. While the name is unreadable the app cannot tell "
-                + "home from away, so it holds its current state and does not "
-                + "switch.", 14, COL_MUTED);
+        hintUnknown = makeText("WiFi name is hidden right now. While it is "
+                + "unreadable the app cannot tell home from away, so it holds "
+                + "its current state and does not switch.", 14, COL_MUTED);
         hintUnknown.setLayoutParams(lp(12));
         root.addView(hintUnknown);
 
@@ -351,9 +332,7 @@ public class MainActivity extends Activity {
 
         logView = makeText("", 13, COL_MUTED);
         logView.setTypeface(Typeface.MONOSPACE);
-        GradientDrawable logBg = rounded(COL_SURFACE, 14);
-        logBg.setStroke(dp(1), COL_BORDER);
-        logView.setBackground(logBg);
+        logView.setBackground(UiKit.cardBackground(this, COL_SURFACE, COL_BORDER));
         logView.setPadding(dp(14), dp(12), dp(14), dp(12));
         logView.setLayoutParams(lp(10));
         logView.setVisibility(View.GONE);
@@ -529,9 +508,7 @@ public class MainActivity extends Activity {
                     0, LinearLayout.LayoutParams.WRAP_CONTENT, 1f));
             row.addView(name);
 
-            Button remove = new Button(this);
-            remove.setText("Remove");
-            remove.setAllCaps(false);
+            Button remove = UiKit.button(this, "Remove");
             remove.setTextSize(13);
             remove.setTextColor(COL_REMOVE);
             remove.setBackground(buttonBg(COL_REMOVE_BG, COL_REMOVE_BG_PRESSED,
@@ -623,27 +600,27 @@ public class MainActivity extends Activity {
         hintUnknown.setVisibility(onWifi && ssid.length() == 0 ? View.VISIBLE : View.GONE);
         noteNoTailscale.setVisibility(tailscaleInstalled() ? View.GONE : View.VISIBLE);
 
-        // Permission buttons phase out once granted, the way the
-        // Alarms setup section quiets down: each button disappears
-        // when its permission is in place, and the whole card
-        // (explanation text included) goes once both are granted.
-        // refresh() runs on every resume, so returning from a system
-        // settings screen updates this without a restart.
+        // Permission state, the Alarms model: the status line
+        // always shows where things stand, a granted permission's
+        // button fades to GRANTED_ALPHA and stays tappable, and
+        // nothing is ever removed. refresh() runs on every resume,
+        // so returning from a system settings screen updates this
+        // without a restart.
         boolean locationOk = checkSelfPermission(
                 Manifest.permission.ACCESS_FINE_LOCATION)
                 == PackageManager.PERMISSION_GRANTED;
         PowerManager pm = (PowerManager) getSystemService(Context.POWER_SERVICE);
         boolean batteryOk = pm != null
                 && pm.isIgnoringBatteryOptimizations(getPackageName());
+        if (permStatus != null) {
+            permStatus.setText("Location: " + (locationOk ? "granted" : "NOT granted")
+                    + "\nBattery optimisation: " + (batteryOk ? "exempt" : "NOT exempt"));
+        }
         if (permButton != null) {
-            permButton.setVisibility(locationOk ? View.GONE : View.VISIBLE);
+            permButton.setAlpha(locationOk ? UiKit.GRANTED_ALPHA : 1.0f);
         }
         if (batteryButton != null) {
-            batteryButton.setVisibility(batteryOk ? View.GONE : View.VISIBLE);
-        }
-        if (permCard != null) {
-            permCard.setVisibility(locationOk && batteryOk
-                    ? View.GONE : View.VISIBLE);
+            batteryButton.setAlpha(batteryOk ? UiKit.GRANTED_ALPHA : 1.0f);
         }
 
         boolean monitoring = prefs.isMonitoring();

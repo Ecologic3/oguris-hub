@@ -21,19 +21,21 @@ import android.widget.TextView;
  */
 public class MainActivity extends Activity {
 
-    private static final int BG = Color.rgb(13, 32, 48);
+    private static final int BG = UiKit.BG;
     private static final int CARD = Color.rgb(22, 50, 74);
     private static final int CARD_EDGE = Color.rgb(38, 74, 102);
     private static final int TEXT = Color.rgb(235, 242, 247);
     private static final int MUTED = Color.rgb(158, 182, 199);
     private static final int GOLD = Color.rgb(255, 209, 102);
 
+    // Card titles match the module headers exactly, and each card's
+    // accent bar takes its module's own accent colour.
     private static final String[][] MODULES = {
-        {"Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "255,138,128"},
-        {"Steps", "Step counting, history and widget", "app.oguri.hub.steps", "105,240,174"},
-        {"Chips", "Poker chip table and game engine", "app.oguri.hub.chips", "255,213,79"},
-        {"Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "130,177,255"},
-        {"Oguri's VPN Switch", "Tailscale off at home, on away", "app.oguri.hub.vpn", "179,157,217"},
+        {"Oguri's Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "139,92,246"},
+        {"Oguri's Steps", "Step counting, history and widget", "app.oguri.hub.steps", "61,220,151"},
+        {"Oguri's Chips", "Poker chip table and game engine", "app.oguri.hub.chips", "217,164,65"},
+        {"Oguri's Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "245,168,61"},
+        {"Oguri's VPN Switch", "Tailscale off at home, on away", "app.oguri.hub.vpn", "69,216,255"},
     };
 
     // Each card carries its module's own standalone launcher icon.
@@ -48,26 +50,24 @@ public class MainActivity extends Activity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        getWindow().setStatusBarColor(BG);
-        getWindow().setNavigationBarColor(BG);
+        UiKit.setSystemBars(this, BG);
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
         root.setBackgroundColor(BG);
-        root.setPadding(dp(20), dp(24), dp(20), dp(24));
+        UiKit.applyRootPadding(this, root);
 
         TextView title = new TextView(this);
         title.setText("Oguri's Hub");
         title.setTextColor(GOLD);
         title.setTextSize(30);
         title.setTypeface(Typeface.DEFAULT_BOLD);
+        LinearLayout.LayoutParams titleLp = new LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                LinearLayout.LayoutParams.WRAP_CONTENT);
+        titleLp.setMargins(0, 0, 0, dp(16));
+        title.setLayoutParams(titleLp);
         root.addView(title);
-
-        TextView sub = new TextView(this);
-        sub.setText("All five Oguri apps, one home.\n");
-        sub.setTextColor(MUTED);
-        sub.setTextSize(15);
-        root.addView(sub);
 
         for (int i = 0; i < MODULES.length; i++) {
             root.addView(moduleCard(MODULES[i], MODULE_ICONS[i]));
@@ -88,15 +88,11 @@ public class MainActivity extends Activity {
         card.setOrientation(LinearLayout.HORIZONTAL);
         card.setGravity(Gravity.CENTER_VERTICAL);
         card.setPadding(dp(16), dp(16), dp(16), dp(16));
-        GradientDrawable bg = new GradientDrawable();
-        bg.setColor(CARD);
-        bg.setCornerRadius(dp(14));
-        bg.setStroke(dp(1), CARD_EDGE);
-        card.setBackground(bg);
+        card.setBackground(UiKit.cardBackground(this, CARD, CARD_EDGE));
         LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);
-        lp.setMargins(0, 0, 0, dp(12));
+        lp.setMargins(0, 0, 0, dp(UiKit.CARD_SPACING_DP));
         card.setLayoutParams(lp);
 
         View bar = new View(this);

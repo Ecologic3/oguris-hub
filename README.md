@@ -8,10 +8,38 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.2 (versionCode 3), minSdk 29,
+Package: `app.oguri.hub`, version 1.3 (versionCode 4), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.3
+
+UI unification across all five modules, from the consistency
+sweep of 25 Nov 2026. A shared UI kit (`app.oguri.hub.UiKit`) now
+carries the geometry every module used to re-implement privately:
+one background (the hub shell's #0D2030, which Steps and VPN also
+use now instead of two near-identical private navies), one card
+(16dp radius, shared padding and spacing), one section heading
+(18sp), one module header, one root-padding rhythm, and system
+bars set on every screen. One permission model everywhere, the
+Alarms one: a status line that always shows where things stand
+and granted buttons faded to 0.45, never removed. VPN gives up
+its disappear-on-grant behaviour (and the code comment that
+wrongly claimed it matched Alarms), Steps' permission rows keep
+their buttons and fade them, and Printer gains a visible
+permission status line and buttons where it previously requested
+silently at Scan time. Chips' setup header joins the convention
+(30sp near-white, was 26sp gold; gold remains its accent) and its
+in-game top bar follows on title size, colour and icon size;
+Chips also loses the emoji in its button labels. The hub home
+cards are named exactly like the module headers and their accent
+bars now take each module's own accent colour, and the "All five
+Oguri apps, one home." tagline is gone. Text rule throughout:
+status lines yes, paragraphs no (VPN's permission paragraph is a
+status line now, Steps' permanent footer is removed). No module
+logic changed: the band stack, counting engine, game engine,
+printer transports and the VPN service are untouched.
 
 ### 1.2
 
@@ -61,7 +89,7 @@ must sit at the APK archive root, hence the zip from inside
 `build/dex`.
 
 ```sh
-./build.sh   # produces OguriHub-1.2.apk
+./build.sh   # produces OguriHub-1.3.apk
 ```
 
 The signing keystore (`oguris-hub.keystore`) is generated on first
