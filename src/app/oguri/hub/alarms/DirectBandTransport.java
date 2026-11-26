@@ -89,7 +89,7 @@ public final class DirectBandTransport implements BandTransport {
             @Override
             public void run() {
                 try {
-                    BandSession.execute(appCtx, new BandSession.Operation() {
+                    executeWithRebond(appCtx, new BandSession.Operation() {
                         @Override
                         public void run(BandSession session) throws BandException {
                             session.request(AlarmPackets.SVC,
@@ -129,7 +129,7 @@ public final class DirectBandTransport implements BandTransport {
             @Override
             public void run() {
                 try {
-                    BandSession.execute(appCtx, new BandSession.Operation() {
+                    executeWithRebond(appCtx, new BandSession.Operation() {
                         @Override
                         public void run(BandSession session) throws BandException {
                             long epochSeconds = epochMillis / 1000L;
@@ -154,6 +154,24 @@ public final class DirectBandTransport implements BandTransport {
                 }
             }
         });
+    }
+
+    /**
+     * Runs one session for the operation. A BandRefusedException means
+     * the band's stored bond key no longer matches the app's (every
+     * encrypted command refused with the same result code while the
+     * plaintext handshake still passes); the session is then retried
+     * once with a forced re-bond, which re-registers the app's key
+     * with the band and heals the pairing in place. A refusal in the
+     * retried session propagates and surfaces as the usual toast.
+     */
+    private static void executeWithRebond(Context appCtx,
+            BandSession.Operation operation) throws BandException {
+        try {
+            BandSession.execute(appCtx, operation);
+        } catch (BandRefusedException e) {
+            BandSession.execute(appCtx, operation, true);
+        }
     }
 
     /**

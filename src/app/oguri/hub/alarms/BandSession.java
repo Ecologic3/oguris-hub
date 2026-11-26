@@ -103,6 +103,7 @@ public final class BandSession {
 
     // Protocol state for this session.
     private LinkParams mLink;
+    private boolean mForceBond;
     private byte[] mSecretKey;
     private String mFakeMac;
     private HuaweiCrypto.IvGenerator mIvGen;
@@ -116,7 +117,18 @@ public final class BandSession {
      * then disconnect (always, even on failure).
      */
     public static void execute(Context ctx, Operation operation) throws BandException {
+        execute(ctx, operation, false);
+    }
+
+    /**
+     * Runs a whole session; with forceBond set, the bond request runs
+     * even when the band reports an existing bond, re-registering the
+     * app's secret key with the band.
+     */
+    public static void execute(Context ctx, Operation operation,
+            boolean forceBond) throws BandException {
         BandSession session = new BandSession(ctx);
+        session.mForceBond = forceBond;
         try {
             session.open();
             session.initialize();
@@ -332,7 +344,7 @@ public final class BandSession {
                 DeviceConfigPackets.parseBondParamsResponse(bondParamsResp);
         mIvGen = new HuaweiCrypto.IvGenerator(bondParams.encryptionCounter);
 
-        if (bondParams.status != 1) {
+        if (bondParams.status != 1 || mForceBond) {
             // Bond: deliver our secret key, wrapped under the key derived
             // from the band's own MAC. Skipped only when the band says
             // it is already bonded (status 1), as in band.py / GB.
@@ -368,6 +380,28 @@ public final class BandSession {
         } catch (Exception e) {
             Log.w(TAG, "Battery level read failed, continuing without it", e);
             return null;
+        }
+    }
+
+    /** Tag carrying the band's result code on command replies. */
+    private static final int TAG_RESULT = 0x7F;
+
+    /** The band's success result code (Gadgetbridge's successValue). */
+    private static final int RESULT_OK = 0x000186A0;
+
+    /**
+     * A reply carrying a result tag is the band's verdict on the
+     * command, not data: anything but RESULT_OK means the band refused
+     * it (a desynced bond answers every encrypted command with the
+     * same refusal while the plaintext handshake still passes).
+     * Replies without the tag are data and pass untouched.
+     */
+    private static void checkResultCode(Tlv resp) throws BandException {
+        if (resp.contains(TAG_RESULT)) {
+            int code = resp.getInt(TAG_RESULT, RESULT_OK);
+            if (code != RESULT_OK) {
+                throw new BandRefusedException(code);
+            }
         }
     }
 
@@ -432,12 +466,15 @@ public final class BandSession {
         }
         Tlv parsed = Tlv.parse(packet.tlvBytes);
         if (encrypted) {
+            Tlv plain;
             try {
-                return HuaweiCrypto.decryptTlv(mLink.useGcm(), mSecretKey, parsed);
+                plain = HuaweiCrypto.decryptTlv(mLink.useGcm(), mSecretKey, parsed);
             } catch (RuntimeException e) {
                 throw new BandException("Band reply could not be decrypted "
                         + "(bond key mismatch?)", e);
             }
+            checkResultCode(plain);
+            return plain;
         }
         return parsed;
     }
