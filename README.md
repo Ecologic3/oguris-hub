@@ -10,10 +10,37 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.8 (versionCode 9), minSdk 29,
+Package: `app.oguri.hub`, version 1.9 (versionCode 10), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.9
+
+One fix: the Mnemosyne module no longer opens onto a black
+void away from home. Adam's 26 Nov field report from eduroam in
+Brno: the module header rendered, the WebView area stayed pure
+black, no page and no error. The box side was verified healthy
+(the dashboard answers on its addresses and its certificate
+covers all of them); the fault was the 1.8 load strategy, which
+loaded the home-LAN name first and only fell back on a WebView
+error. From a foreign network that name can hang instead of
+failing fast, leaving the WebView on its black background
+indefinitely, with no loading or error state at all. The
+module now loads exactly one address, https://mnemosyne:3467:
+the bare name is the box's Tailscale MagicDNS name, which
+resolves from anywhere, on the home LAN and over the tailnet
+alike (Adam verified it live from Brno; the candidate-probing
+design drafted for this fix was dropped at his word in favour
+of the single name). While a load is in flight, a "Connecting
+to mnemosyne..." label covers the WebView area; a failed load
+replaces it with an error state ("Mnemosyne is not reachable
+on this network.") and a Retry button, and the header Reload
+button loads the address again through the same states. An
+SSL error now cancels the load and shows the error state with
+a certificate note instead of silently cancelling into the
+same black page. Everything else about the module and the hub
+is unchanged from 1.8.
 
 ### 1.8
 
