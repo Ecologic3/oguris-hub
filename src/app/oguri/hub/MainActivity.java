@@ -9,7 +9,9 @@ import android.graphics.drawable.GradientDrawable;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
+import android.view.ViewGroup;
 import android.widget.Button;
+import android.widget.FrameLayout;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
@@ -21,6 +23,8 @@ import android.widget.TextView;
  * under app.oguri.hub.<module>.
  */
 public class MainActivity extends Activity {
+
+    private MotesView motes;
 
     private static final int BG = UiKit.BG;
     private static final int CARD = Color.rgb(22, 50, 74);
@@ -105,9 +109,37 @@ public class MainActivity extends Activity {
         root.addView(pillRow);
 
         ScrollView scroll = new ScrollView(this);
-        scroll.setBackgroundColor(BG);
+        scroll.setBackgroundColor(Color.TRANSPARENT);
         scroll.addView(root);
-        setContentView(scroll);
+        // Since 1.11 the home sits on a living background: the
+        // motes layer fills the screen behind the transparent
+        // scroll view, so the cards drift over it.
+        FrameLayout stage = new FrameLayout(this);
+        stage.setBackgroundColor(BG);
+        motes = new MotesView(this);
+        stage.addView(motes, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        stage.addView(scroll, new FrameLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT,
+                ViewGroup.LayoutParams.MATCH_PARENT));
+        setContentView(stage);
+    }
+
+    @Override
+    protected void onResume() {
+        super.onResume();
+        if (motes != null) {
+            motes.start();
+        }
+    }
+
+    @Override
+    protected void onPause() {
+        if (motes != null) {
+            motes.stop();
+        }
+        super.onPause();
     }
 
     private View moduleCard(final String[] m, int iconRes) {

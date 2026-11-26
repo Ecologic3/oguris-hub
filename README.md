@@ -10,10 +10,23 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.10 (versionCode 11), minSdk 29,
+Package: `app.oguri.hub`, version 1.11 (versionCode 12), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.11
+
+The hub home screen is alive: behind the module cards, tiny
+specks in the six module accent colours drift slowly upward,
+fading in at the bottom and out at the top, each with a gentle
+sideways sway (a MotesView behind the transparent scroll
+view). Adam picked this design ("Rising motes") from animated
+renders on 26 Nov 2026; the shipped motion runs far slower
+than the previews did, a full rise takes 7-13 seconds per
+speck. The animation runs only while the home screen is
+resumed, so it costs nothing in the background. The modules
+themselves are unchanged.
 
 ### 1.10
 
