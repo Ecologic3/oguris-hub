@@ -65,7 +65,11 @@ public class MainActivity extends Activity {
 
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(BG);
+        // No background on the root: the stage paints BG and the
+        // motes layer sits between it and this content (since
+        // 1.11). Painting the root opaque, as it was until 1.12,
+        // hid the motes everywhere the content reached, so they
+        // only showed below the Permissions pill (Adam's report).
         UiKit.applyRootPadding(this, root);
 
         // The shared header: the app name on the left, the hub's

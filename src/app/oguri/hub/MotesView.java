@@ -30,7 +30,7 @@ public final class MotesView extends View {
             Color.rgb(69, 216, 255),   // VPN cyan
             Color.rgb(217, 164, 65),   // Chips gold
     };
-    private static final int COUNT = 44;
+    private static final int COUNT = 72;
     private static final int PEAK_ALPHA = 140;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);

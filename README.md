@@ -10,10 +10,25 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.12 (versionCode 13), minSdk 29,
+Package: `app.oguri.hub`, version 1.13 (versionCode 14), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.13
+
+The motes now fill the whole screen, and there are more of
+them. Adam's report on 1.12: the specks stopped at the
+Permissions button line instead of rising through the whole
+background. Cause: the home's root layout still painted
+itself opaque BG (a leftover from before the motes existed),
+and since the root only wraps the content, it hid the motes
+everywhere the content reached; they only showed in the
+empty strip below the last row. The root is transparent now
+(the stage underneath still paints BG, and the cards keep
+their own opaque fill), so the specks rise the full height
+behind the header, the gaps and the margins. Density rises
+again, 44 to 72.
 
 ### 1.12
 
