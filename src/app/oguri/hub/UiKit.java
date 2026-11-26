@@ -2,11 +2,13 @@ package app.oguri.hub;
 
 import android.app.Activity;
 import android.content.Context;
+import android.content.Intent;
 import android.graphics.Color;
 import android.graphics.Typeface;
 import android.graphics.drawable.GradientDrawable;
 import android.graphics.drawable.StateListDrawable;
 import android.view.Gravity;
+import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.ImageView;
@@ -208,10 +210,17 @@ public final class UiKit {
     /**
      * The module header: a 30sp bold title on the left in the
      * module's near-white text colour, the module's own 48dp icon
-     * at the top right, directly on the screen background.
+     * at the top right, directly on the screen background. Since
+     * 1.10 a module can also carry a Hub pill between the title
+     * and the icon (house glyph + "Hub", in the module's own
+     * colours): one tap returns to the hub home, clearing the
+     * activities above it. A zero pillAccent means no pill (the
+     * hub home itself).
      */
     public static LinearLayout header(Activity activity, String title,
-                                      int titleColor, int iconRes) {
+                                      int titleColor, int iconRes,
+                                      int pillFill, int pillStroke,
+                                      int pillAccent) {
         LinearLayout row = new LinearLayout(activity);
         row.setOrientation(LinearLayout.HORIZONTAL);
         row.setGravity(Gravity.CENTER_VERTICAL);
@@ -222,6 +231,9 @@ public final class UiKit {
         t.setTextColor(titleColor);
         row.addView(t, new LinearLayout.LayoutParams(
                 0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        if (pillAccent != 0) {
+            row.addView(hubPill(activity, pillFill, pillStroke, pillAccent));
+        }
         try {
             ImageView icon = new ImageView(activity);
             icon.setImageResource(iconRes);
@@ -231,5 +243,43 @@ public final class UiKit {
             // The icon is cosmetic only; the header works without it.
         }
         return row;
+    }
+
+    /** The back-to-home pill shown in module headers since 1.10. */
+    private static LinearLayout hubPill(final Activity activity, int fill,
+                                        int stroke, int accent) {
+        LinearLayout pill = new LinearLayout(activity);
+        pill.setOrientation(LinearLayout.HORIZONTAL);
+        pill.setGravity(Gravity.CENTER);
+        pill.setPadding(dp(activity, 10), 0, dp(activity, 12), 0);
+        pill.setBackground(buttonBackground(activity, fill,
+                pressedOf(fill), stroke, 999));
+        ImageView glyph = new ImageView(activity);
+        glyph.setImageResource(R.drawable.ic_hub_home);
+        glyph.setColorFilter(accent);
+        LinearLayout.LayoutParams glyphLp = new LinearLayout.LayoutParams(
+                dp(activity, 15), dp(activity, 15));
+        glyphLp.setMargins(0, 0, dp(activity, 5), 0);
+        pill.addView(glyph, glyphLp);
+        TextView label = new TextView(activity);
+        label.setText("Hub");
+        label.setTextSize(14);
+        label.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        label.setTextColor(accent);
+        pill.addView(label);
+        LinearLayout.LayoutParams lp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.WRAP_CONTENT, dp(activity, 34));
+        lp.setMargins(0, 0, dp(activity, 10), 0);
+        pill.setLayoutParams(lp);
+        pill.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(activity, MainActivity.class);
+                intent.addFlags(Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        | Intent.FLAG_ACTIVITY_SINGLE_TOP);
+                activity.startActivity(intent);
+            }
+        });
+        return pill;
     }
 }

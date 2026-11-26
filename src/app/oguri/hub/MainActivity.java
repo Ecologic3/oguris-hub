@@ -68,7 +68,7 @@ public class MainActivity extends Activity {
         // own icon at the top right, the spot every module header
         // uses for its icon (since 1.5).
         LinearLayout header = UiKit.header(this, "Oguri's Hub", GOLD,
-                R.mipmap.ic_launcher);
+                R.mipmap.ic_launcher, 0, 0, 0);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
                 LinearLayout.LayoutParams.MATCH_PARENT,
                 LinearLayout.LayoutParams.WRAP_CONTENT);

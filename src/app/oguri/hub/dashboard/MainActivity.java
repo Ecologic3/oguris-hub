@@ -97,7 +97,7 @@ public class MainActivity extends Activity {
         // launcher art at the top right until the module gets an
         // icon of its own.
         root.addView(UiKit.header(this, "Mnemosyne", COL_TEXT,
-                R.mipmap.ic_launcher));
+                R.mipmap.ic_launcher, COL_BTN, 0xFF264A66, COL_ACCENT));
 
         Button reload = UiKit.smallButton(this, "Reload", COL_BTN,
                 UiKit.pressedOf(COL_BTN), COL_ACCENT);

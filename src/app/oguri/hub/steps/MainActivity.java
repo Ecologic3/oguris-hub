@@ -148,7 +148,7 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         root.addView(UiKit.header(this, "Steps", TEXT,
-                R.mipmap.ic_mod_steps));
+                R.mipmap.ic_mod_steps, CHIPBG, 0, ACCENT));
         String dateStr = new SimpleDateFormat("EEEE d MMMM", Locale.UK).format(new Date());
         TextView sub = text(dateStr, 14, MUTED, false);
         LinearLayout.LayoutParams subLp = new LinearLayout.LayoutParams(

@@ -76,7 +76,7 @@ public class PermissionsActivity extends Activity {
         UiKit.applyRootPadding(this, root);
 
         LinearLayout header = UiKit.header(this, "Permissions", TEXT,
-                R.mipmap.ic_launcher);
+                R.mipmap.ic_launcher, CARD, CARD_EDGE, 0xFFFFD166);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT,
                 ViewGroup.LayoutParams.WRAP_CONTENT);

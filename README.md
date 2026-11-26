@@ -10,10 +10,23 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.9 (versionCode 10), minSdk 29,
+Package: `app.oguri.hub`, version 1.10 (versionCode 11), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.10
+
+Every module header now carries a Hub pill between the title
+and the module icon (house glyph + "Hub"), in the module's own
+surface and accent colours: one tap returns to the hub home,
+clearing the activities above it, instead of swiping back
+through the stack. The title keeps its exact place at the left
+edge; the pill borrows the free space at the right of the
+header row. The hub home itself has no pill (it is the
+destination), and the Permissions screen carries one too, in
+the hub shell's colours. Placement and colours were approved
+from renders on 26 Nov 2026 before building.
 
 ### 1.9
 

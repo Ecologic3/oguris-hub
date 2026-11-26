@@ -366,7 +366,7 @@ public class MainActivity extends Activity {
         // where every other module title is 30sp near-white; gold
         // stays as the module's accent elsewhere).
         root.addView(UiKit.header(this, "Chips", TXT,
-                R.mipmap.ic_mod_chips));
+                R.mipmap.ic_mod_chips, 0xFF332619, BORDER, GOLD));
 
         if (hasSave()) {
             LinearLayout c = card();

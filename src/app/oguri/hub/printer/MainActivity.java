@@ -279,7 +279,7 @@ public class MainActivity extends Activity {
         scroll.addView(root);
 
         LinearLayout header = UiKit.header(this, "Printer", TEXT,
-                R.mipmap.ic_mod_printer);
+                R.mipmap.ic_mod_printer, CHIPBG, 0, ACCENT);
         LinearLayout.LayoutParams headerLp = new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
         headerLp.setMargins(0, 0, 0, dp(16));

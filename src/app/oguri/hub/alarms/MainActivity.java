@@ -188,7 +188,7 @@ public class MainActivity extends Activity {
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         root.addView(UiKit.header(this, "Alarms", COLOR_TEXT,
-                R.mipmap.ic_mod_alarms), new LinearLayout.LayoutParams(
+                R.mipmap.ic_mod_alarms, 0x1AFFFFFF, 0x73A78BFA, COLOR_ACCENT_LIGHT), new LinearLayout.LayoutParams(
                 ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT));
 
         // Slim band status row directly under the header: the last

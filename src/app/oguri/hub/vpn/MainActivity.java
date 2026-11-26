@@ -170,7 +170,7 @@ public class MainActivity extends Activity {
         // The shared module header: name on the left, the module's
         // own icon at the top right.
         root.addView(UiKit.header(this, "VPN Switch", COL_TEXT,
-                R.mipmap.ic_mod_vpn));
+                R.mipmap.ic_mod_vpn, COL_RAISED, COL_BORDER, COL_ACCENT));
 
         // Status block.
         LinearLayout statusCard = makeCard(16);
