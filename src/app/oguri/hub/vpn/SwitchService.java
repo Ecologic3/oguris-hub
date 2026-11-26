@@ -73,6 +73,16 @@ public class SwitchService extends Service {
     public static final String ACTION_REEVALUATE = "app.oguri.hub.vpn.REEVALUATE";
     public static final String ACTION_UI_REFRESH = "app.oguri.hub.vpn.UI_REFRESH";
 
+    // Hub 1.8: whether this process currently holds a live service
+    // instance, read by WatchdogReceiver. A package replacement or
+    // a process kill resets it with the process, which is exactly
+    // the state the watchdog exists to revive.
+    private static volatile boolean running = false;
+
+    public static boolean isRunning() {
+        return running;
+    }
+
     // v1.4: the status notification moved to a fresh channel id at
     // IMPORTANCE_MIN. A channel's importance locks at first creation, so
     // the v1.0-v1.3 channel (OLD_CHANNEL_ID, IMPORTANCE_LOW) could never be
@@ -190,6 +200,12 @@ public class SwitchService extends Service {
     @Override
     public void onCreate() {
         super.onCreate();
+        running = true;
+        // Hub 1.8: every path that runs the service (boot, package
+        // replacement, the UI, the watchdog itself) re-arms the
+        // watchdog, so a silent death is revived within about
+        // 15 minutes instead of at the next manual app open.
+        WatchdogReceiver.schedule(this);
         prefs = new Prefs(this);
         handler = new Handler(Looper.getMainLooper());
         cm = (ConnectivityManager) getSystemService(Context.CONNECTIVITY_SERVICE);
@@ -209,6 +225,7 @@ public class SwitchService extends Service {
 
     @Override
     public void onDestroy() {
+        running = false;
         stopBurst();
         if (cm != null) {
             if (wifiCallback != null) {

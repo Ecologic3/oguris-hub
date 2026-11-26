@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    The hub trusts the system certificates plus the Mnemosyne
+    Home CA bundled in res/raw, so the Dashboard module's WebView
+    can open the mnemosyne dashboard, which is served with a
+    certificate issued by that local CA. Cleartext stays off.
+-->
+<network-security-config>
+    <base-config cleartextTrafficPermitted="false">
+        <trust-anchors>
+            <certificates src="system" />
+            <certificates src="@raw/mnemosyne_ca" />
+        </trust-anchors>
+    </base-config>
+</network-security-config>

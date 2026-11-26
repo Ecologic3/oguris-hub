@@ -227,6 +227,7 @@ public class MainActivity extends Activity {
                 if (on) {
                     SwitchService.start(MainActivity.this);
                 } else {
+                    WatchdogReceiver.cancel(MainActivity.this);
                     SwitchService.stop(MainActivity.this);
                 }
                 refresh();

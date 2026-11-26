@@ -2,16 +2,51 @@
 
 All five Oguri apps in one: **Alarms, Steps, Chips, Printer and
 VPN Switch**, each ported in full under the hub package
-(`app.oguri.hub.<module>`), behind one dark home screen. Every module
+(`app.oguri.hub.<module>`), behind one dark home screen, plus
+(since 1.8) a **Mnemosyne** module that frames the mnemosyne
+dashboard in a WebView. Every module
 keeps 100% of its standalone features: the alarms band sync and sound
 backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.6 (versionCode 7), minSdk 29,
+Package: `app.oguri.hub`, version 1.8 (versionCode 9), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.8
+
+Two changes. A sixth module, **Mnemosyne**: a WebView window onto
+the mnemosyne dashboard, sitting at the top of the home screen,
+above Alarms (Chips stays last). The dashboard itself stays on
+the box; the module only frames the live page, login cookie and
+all. It loads the home-LAN name (mnemosyne.home:3467) first and
+falls back once to the tailnet address (100.100.181.48:3467) on a
+connection-level failure, which is the route that works away from
+home while Tailscale is up. The app gains the INTERNET permission
+and bundles the Mnemosyne Home CA next to the system certificates
+(network security config, cleartext off), so the page loads
+without certificate warnings. The module reuses the hub launcher
+art as its icon for now; a dedicated icon proposal comes later.
+
+And the VPN module's monitoring no longer dies silently on app
+updates. Adam's 26 Nov field report: healthy evaluations at home
+until 01:48, then total silence, not even a mobile-data
+evaluation while travelling, until the app was opened by hand at
+12:09. Diagnosis: a package replacement kills the service, and
+nothing restarted it (no MY_PACKAGE_REPLACED handler anywhere;
+the only restart paths were BOOT_COMPLETED and opening the
+module). The service already returned START_STICKY, which does
+not cover package replacement. Fixes, lifecycle only, evaluation
+logic untouched: the VPN boot receiver also handles
+MY_PACKAGE_REPLACED and restarts monitoring when it was enabled
+(logging "App updated, monitoring restarted"), and a new watchdog
+(an inexact repeating AlarmManager alarm, about every 15 minutes)
+restarts the service whenever monitoring is enabled but the
+service is not running, logging each revival in the module log.
+The watchdog is armed from the service's onCreate, re-armed on
+boot and on update, and cancels itself while monitoring is off.
 
 ### 1.6
 

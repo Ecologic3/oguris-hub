@@ -16,7 +16,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * Oguri's Hub home screen: one dark shell, five module cards.
+ * Oguri's Hub home screen: one dark shell, six module cards.
  * Each card opens the module's own MainActivity, ported in full
  * under app.oguri.hub.<module>.
  */
@@ -34,6 +34,7 @@ public class MainActivity extends Activity {
     // the modules carry no "Oguri's" prefix (the whole app is
     // Oguri's Hub) and Chips sits last.
     private static final String[][] MODULES = {
+        {"Mnemosyne", "Live mnemosyne dashboard", "app.oguri.hub.dashboard", "255,0,174"},
         {"Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "139,92,246"},
         {"Steps", "Step counting, history and widget", "app.oguri.hub.steps", "61,220,151"},
         {"Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "245,168,61"},
@@ -42,7 +43,10 @@ public class MainActivity extends Activity {
     };
 
     // Each card carries its module's own standalone launcher icon.
+    // Mnemosyne reuses the hub launcher art until its own icon
+    // proposal lands (Hub 1.8).
     private static final int[] MODULE_ICONS = {
+        R.mipmap.ic_launcher,
         R.mipmap.ic_mod_alarms,
         R.mipmap.ic_mod_steps,
         R.mipmap.ic_mod_printer,
