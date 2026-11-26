@@ -18,7 +18,7 @@ if [ ! -f "$KS" ]; then
     -dname "CN=Oguri Hub, O=Oguri, C=SK"
 fi
 
-OUT="OguriHub-1.13.apk"
+OUT="OguriHub-1.14.apk"
 rm -rf build
 mkdir -p build/classes build/dex build/gen
 

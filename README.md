@@ -10,10 +10,22 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.13 (versionCode 14), minSdk 29,
+Package: `app.oguri.hub`, version 1.14 (versionCode 15), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.14
+
+The Mnemosyne module has an icon of its own at last: Oguri
+pointing at a floating pink dashboard hologram, picked by
+Adam from three proposals on 26 Nov 2026 and finished like
+the other module icons (full set of density assets, adaptive
+foreground in the safe zone, background colour sampled from
+the art's own edge). It replaces the hub launcher art the
+module borrowed in 1.8, both on the home card and in the
+module's header, so the module no longer wears the hub's
+face. The hub launcher icon itself is unchanged.
 
 ### 1.13
 

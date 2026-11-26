@@ -50,7 +50,7 @@ public class MainActivity extends Activity {
     // Mnemosyne reuses the hub launcher art until its own icon
     // proposal lands (Hub 1.8).
     private static final int[] MODULE_ICONS = {
-        R.mipmap.ic_launcher,
+        R.mipmap.ic_mod_mnemosyne,
         R.mipmap.ic_mod_alarms,
         R.mipmap.ic_mod_steps,
         R.mipmap.ic_mod_printer,
