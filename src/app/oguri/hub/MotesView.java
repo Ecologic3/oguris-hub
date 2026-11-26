@@ -30,7 +30,7 @@ public final class MotesView extends View {
             Color.rgb(69, 216, 255),   // VPN cyan
             Color.rgb(217, 164, 65),   // Chips gold
     };
-    private static final int COUNT = 24;
+    private static final int COUNT = 44;
     private static final int PEAK_ALPHA = 140;
 
     private final Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG);
@@ -40,6 +40,7 @@ public final class MotesView extends View {
     private final float[] phases = new float[COUNT];
     private final float[] sways = new float[COUNT];
     private boolean running;
+    private long startMillis = -1;
 
     public MotesView(Context ctx) {
         super(ctx);
@@ -57,6 +58,7 @@ public final class MotesView extends View {
     public void start() {
         if (!running) {
             running = true;
+            startMillis = SystemClock.uptimeMillis();
             invalidate();
         }
     }
@@ -75,19 +77,29 @@ public final class MotesView extends View {
             return;
         }
         float density = getResources().getDisplayMetrics().density;
-        long now = SystemClock.uptimeMillis();
+        if (startMillis < 0) {
+            startMillis = SystemClock.uptimeMillis();
+        }
+        // Phase math in double precision on elapsed time: dividing
+        // the raw uptime clock (hundreds of millions of ms) in
+        // float32 quantised the phase into visible steps, which is
+        // what made 1.11's motion jagged.
+        long elapsed = SystemClock.uptimeMillis() - startMillis;
         for (int i = 0; i < COUNT; i++) {
-            float p = (now / periods[i] + phases[i]) % 1f;
-            float y = h - p * (h + 20f * density) + 10f * density;
-            float x = xs[i] * w + (float) Math.sin(
-                    p * Math.PI * 2 + phases[i] * Math.PI * 2) * sways[i] * density;
-            float fade = Math.min(p / 0.12f, 1f) * Math.min((1f - p) / 0.12f, 1f);
+            double p = (elapsed / (double) periods[i] + phases[i]) % 1.0;
+            float y = (float) (h - p * (h + 20f * density) + 10f * density);
+            float x = (float) (xs[i] * w + Math.sin(
+                    p * Math.PI * 2 + phases[i] * Math.PI * 2) * sways[i] * density);
+            float fade = (float) (Math.min(p / 0.12, 1.0)
+                    * Math.min((1.0 - p) / 0.12, 1.0));
             paint.setColor(COLORS[i % COLORS.length]);
             paint.setAlpha(Math.round(PEAK_ALPHA * Math.max(0f, fade)));
             canvas.drawCircle(x, y, sizes[i] * density / 2f, paint);
         }
         if (running) {
-            postInvalidateDelayed(16);
+            // Vsync-aligned redraw; a plain delayed invalidate
+            // drifts against the display refresh and judders.
+            postInvalidateOnAnimation();
         }
     }
 }

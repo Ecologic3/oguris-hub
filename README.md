@@ -10,10 +10,24 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.11 (versionCode 12), minSdk 29,
+Package: `app.oguri.hub`, version 1.12 (versionCode 13), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.12
+
+The motes move smoothly now, and there are more of them.
+Adam's field report on 1.11: "very jagged and not smooth at
+all", plus a wish for higher density. The jaggedness had two
+causes, both in MotesView: the phase was computed by dividing
+the raw uptime clock in float32, which quantises time into
+visible steps once the phone has been up a while, and the
+redraw loop used a plain 16 ms delayed invalidate, which
+drifts against the display's vsync. The phase is now computed
+in double precision from elapsed time, and the loop redraws
+with postInvalidateOnAnimation. Density rises from 24 specks
+to 44, same colours, sizes and rise times.
 
 ### 1.11
 
