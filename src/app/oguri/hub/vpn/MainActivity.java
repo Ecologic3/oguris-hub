@@ -3,6 +3,7 @@ package app.oguri.hub.vpn;
 import app.oguri.hub.R;
 import app.oguri.hub.UiKit;
 
+import android.Manifest;
 import android.app.Activity;
 import android.content.BroadcastReceiver;
 import android.content.Context;
@@ -70,6 +71,7 @@ public class MainActivity extends Activity {
     private TextView statusLastAction;
     private TextView hintUnknown;
     private TextView noteNoTailscale;
+    private TextView noteNoBackgroundLoc;
     private TextView logView;
     private Button toggleButton;
     private Button logToggleButton;
@@ -250,6 +252,20 @@ public class MainActivity extends Activity {
                 14, COL_MUTED);
         noteNoTailscale.setLayoutParams(lp(12));
         root.addView(noteNoTailscale);
+
+        // Since 1.15: the silent-stall warning. With location set to
+        // "while using the app" only, Android hides the WiFi name
+        // from every background read and switching stalls until the
+        // app is opened (Adam's field case of 27 Nov 2026, a 35
+        // minute hold on his home network). Shown only while
+        // monitoring is on and the background grant is missing.
+        noteNoBackgroundLoc = makeText("Location is set to while using the "
+                + "app only. In the background the WiFi name stays hidden, "
+                + "so switching stalls until the app is opened. Allow all "
+                + "the time on the hub Permissions screen to fix it.",
+                14, COL_MUTED);
+        noteNoBackgroundLoc.setLayoutParams(lp(12));
+        root.addView(noteNoBackgroundLoc);
 
         // Event log: hidden until the toggle at the bottom opens it.
         logToggleButton = makeButton("Show log", new View.OnClickListener() {
@@ -530,6 +546,13 @@ public class MainActivity extends Activity {
         noteNoTailscale.setVisibility(tailscaleInstalled() ? View.GONE : View.VISIBLE);
 
         boolean monitoring = prefs.isMonitoring();
+        boolean fineLoc = checkSelfPermission(Manifest.permission.ACCESS_FINE_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        boolean backgroundLoc = checkSelfPermission(
+                Manifest.permission.ACCESS_BACKGROUND_LOCATION)
+                == PackageManager.PERMISSION_GRANTED;
+        noteNoBackgroundLoc.setVisibility(monitoring && fineLoc && !backgroundLoc
+                ? View.VISIBLE : View.GONE);
         toggleButton.setText(monitoring
                 ? "Monitoring: on (tap to stop)" : "Monitoring: off (tap to start)");
         if (monitoring) {

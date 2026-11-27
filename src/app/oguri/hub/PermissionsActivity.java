@@ -61,6 +61,11 @@ public class PermissionsActivity extends Activity {
         abstract String status(Context ctx);
 
         abstract void act(Activity activity);
+
+        /** Optional dynamic button label; null keeps the static one. */
+        String buttonLabel(Context ctx) {
+            return null;
+        }
     }
 
     private final List<Row> rows = new ArrayList<Row>();
@@ -229,6 +234,10 @@ public class PermissionsActivity extends Activity {
                 continue;
             }
             row.statusView.setText(row.status(this));
+            String label = row.buttonLabel(this);
+            if (label != null) {
+                row.button.setText(label);
+            }
             row.button.setAlpha(row.granted(this) ? UiKit.GRANTED_ALPHA : 1.0f);
         }
     }
@@ -447,17 +456,48 @@ public class PermissionsActivity extends Activity {
     private List<Row> vpnRows() {
         List<Row> list = new ArrayList<Row>();
 
+        // Since 1.15 the VPN location row is about the background
+        // grant: with only "while using the app", Android redacts
+        // the WiFi name whenever the app is closed and switching
+        // stalls until the app is opened (Adam's field case of
+        // 27 Nov 2026). Granted means "all the time" here.
         Row location = new Row() {
             @Override boolean granted(Context ctx) {
-                return has(Manifest.permission.ACCESS_FINE_LOCATION);
+                return has(Manifest.permission.ACCESS_BACKGROUND_LOCATION);
             }
 
             @Override String status(Context ctx) {
-                return granted(ctx) ? "Granted" : "NOT granted";
+                if (granted(ctx)) {
+                    return "Granted, all the time";
+                }
+                return has(Manifest.permission.ACCESS_FINE_LOCATION)
+                        ? "While using the app only, background reads blocked"
+                        : "NOT granted";
+            }
+
+            @Override String buttonLabel(Context ctx) {
+                return has(Manifest.permission.ACCESS_FINE_LOCATION)
+                        ? "Open" : "Grant";
             }
 
             @Override void act(Activity activity) {
-                request(new String[]{Manifest.permission.ACCESS_FINE_LOCATION});
+                if (!has(Manifest.permission.ACCESS_FINE_LOCATION)) {
+                    request(new String[]{Manifest.permission.ACCESS_FINE_LOCATION});
+                } else if (Build.VERSION.SDK_INT >= 30) {
+                    // Android 11+: background location is granted in
+                    // Settings only, never in a dialog.
+                    Toast.makeText(activity,
+                            "Permissions, Location, then Allow all the time",
+                            Toast.LENGTH_LONG).show();
+                    Intent intent = new Intent(
+                            Settings.ACTION_APPLICATION_DETAILS_SETTINGS);
+                    intent.setData(Uri.parse("package:" + activity.getPackageName()));
+                    activity.startActivity(intent);
+                } else {
+                    request(new String[]{
+                            Manifest.permission.ACCESS_FINE_LOCATION,
+                            Manifest.permission.ACCESS_BACKGROUND_LOCATION});
+                }
             }
         };
         location.name = "Location permission";

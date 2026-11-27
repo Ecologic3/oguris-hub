@@ -10,10 +10,28 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.14 (versionCode 15), minSdk 29,
+Package: `app.oguri.hub`, version 1.15 (versionCode 16), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.15
+
+Background location for the VPN Switch. The module could
+never read the WiFi name while the app was closed: the hub
+declared only foreground location, so Android redacted the
+name from every background read, and switching home or away
+stalled until the app was opened by hand (Adam's field case
+of 27 Nov 2026, a 35 minute hold on his home network, the
+disconnect firing the second the app came to the front).
+The manifest now declares ACCESS_BACKGROUND_LOCATION. The
+Permissions screen's VPN location row is background-aware:
+it reports "while using the app only" as not granted, and
+its button opens the app settings page (with a hint toast),
+because Android grants background location only there. The
+VPN module itself shows a note while monitoring runs with
+only the foreground grant, so the stall can no longer pass
+silently. Switching logic is untouched.
 
 ### 1.14
 
