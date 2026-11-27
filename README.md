@@ -10,10 +10,26 @@ backup, the step counting service and home-screen widget, the poker
 chip engine, both printer transports (BLE and SPP), and the VPN
 switch's foreground service with its WiFi gate and two-phase re-check.
 
-Package: `app.oguri.hub`, version 1.15 (versionCode 16), minSdk 29,
+Package: `app.oguri.hub`, version 1.16 (versionCode 17), minSdk 29,
 targetSdk 34.
 
 ## Changelog
+
+### 1.16
+
+The location dot goes back to flashing only on network
+changes. 1.15's background grant made every read succeed,
+including the standing network callback's deliveries: it was
+registered with the location-info flag, so the system handed
+it fresh WiFi info on every signal change and the status-bar
+location indicator burned near-permanently. The callback is
+now a pure change trigger with no location flag (its
+deliveries are redacted and cost no location access), and the
+WiFi name is read one-shot inside each evaluation, a fresh
+capabilities query with WifiManager as the supplement, the
+same event-plus-one-read shape as the dispatcher script on
+Adam's laptop. Evaluation, hold and switching logic are
+otherwise unchanged.
 
 ### 1.15
 

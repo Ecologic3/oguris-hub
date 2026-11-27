@@ -65,9 +65,21 @@ import android.os.Looper;
  * Network truth comes from dedicated callbacks, not from the default
  * network: once a VPN is up the default network IS the VPN, so reads keyed
  * off it lose the WiFi SSID. A callback registered with a TRANSPORT_WIFI
- * request plus FLAG_INCLUDE_LOCATION_INFO tracks the WiFi network itself
- * and delivers unredacted WifiInfo; a second TRANSPORT_CELLULAR callback
- * provides the positive "on mobile data" evidence for Away.
+ * request tracks the WiFi network itself; a second TRANSPORT_CELLULAR
+ * callback provides the positive "on mobile data" evidence for Away.
+ *
+ * 1.16: the WiFi callback is deliberately registered WITHOUT
+ * FLAG_INCLUDE_LOCATION_INFO. With the flag, every capabilities
+ * delivery carried unredacted WifiInfo, so the system's location
+ * indicator burned near-permanently once background location was
+ * granted (1.15), even though the 1.7 gate discarded most deliveries
+ * unread. Without the flag the deliveries are redacted and count as
+ * no location access at all: the tracker is a pure change trigger
+ * (its signature is effectively the network handle), and the name
+ * itself is read one-shot inside readNet() on each evaluation, the
+ * same event-plus-one-read shape as a network script run by an OS
+ * hook. The indicator now flashes only when an evaluation actually
+ * reads: at network changes and during an unknown-name hold.
  */
 public class SwitchService extends Service {
     public static final String ACTION_REEVALUATE = "app.oguri.hub.vpn.REEVALUATE";
@@ -255,15 +267,11 @@ public class SwitchService extends Service {
         if (cm == null) {
             return;
         }
-        // On Android 12+ (API 31+) the callback must carry
-        // FLAG_INCLUDE_LOCATION_INFO, otherwise the WifiInfo delivered to
-        // onCapabilitiesChanged is location-redacted ("<unknown ssid>").
-        if (Build.VERSION.SDK_INT >= 31) {
-            wifiCallback = new WifiCallback(
-                    ConnectivityManager.NetworkCallback.FLAG_INCLUDE_LOCATION_INFO);
-        } else {
-            wifiCallback = new WifiCallback();
-        }
+        // No FLAG_INCLUDE_LOCATION_INFO since 1.16: the tracker is a
+        // change trigger, not a name source, so its deliveries stay
+        // redacted and cost no location access. readNet() reads the
+        // name one-shot per evaluation.
+        wifiCallback = new WifiCallback();
         cellCallback = new CellCallback();
         try {
             // No NET_CAPABILITY_INTERNET requirement: a home WiFi whose
@@ -289,10 +297,6 @@ public class SwitchService extends Service {
     private class WifiCallback extends ConnectivityManager.NetworkCallback {
         WifiCallback() {
             super();
-        }
-
-        WifiCallback(int flags) {
-            super(flags);
         }
 
         @Override
@@ -434,17 +438,19 @@ public class SwitchService extends Service {
 
     /**
      * The single network-reading path used by every evaluation (service
-     * start, network callbacks, UI-triggered re-evaluation). The WiFi
-     * tracker's
-     * latest WifiInfo is the primary SSID source; one-shot capabilities
-     * reads and WifiManager.getConnectionInfo() only supplement it, and
-     * any positively known SSID wins over redacted ones. Since 1.7, a
-     * known SSID from the tracker returns immediately, before any of
-     * the supplement reads run. "On WiFi" comes
-     * from the tracker, never from the default network (which is the VPN
-     * itself while Tailscale is up). The result has ssid == null while
-     * onWifi is true when every source came back redacted; callers must
-     * not treat that as evidence of being away from home.
+     * start, network callbacks, UI-triggered re-evaluation). "On WiFi"
+     * comes from the tracker, never from the default network (which is
+     * the VPN itself while Tailscale is up). The name comes from the
+     * one-shot reads below: a fresh capabilities query on the tracked
+     * network first, WifiManager.getConnectionInfo() as the supplement
+     * that historically lands names the query redacts. Since 1.16 the
+     * tracker's own delivered WifiInfo is redacted by design (no
+     * location flag on its callback), so step 1 only settles "on
+     * WiFi"; each evaluation makes exactly one round of name reads,
+     * which is the only moment the location indicator can light. The
+     * result has ssid == null while onWifi is true when every source
+     * came back redacted; callers must not treat that as evidence of
+     * being away from home.
      */
     private NetInfo readNet() {
         NetInfo ni = new NetInfo();
@@ -452,7 +458,10 @@ public class SwitchService extends Service {
         ni.onCellular = cellNetwork != null;
         ni.ssid = null;
 
-        // 1) WiFi tracker (primary).
+        // 1) WiFi tracker: settles "on WiFi". Its delivered WifiInfo
+        // is redacted since 1.16, so the name check below is a
+        // formality that costs nothing; should a delivery ever carry
+        // a readable name, it still wins and skips the one-shot reads.
         Network tracked = wifiNetwork;
         if (tracked != null) {
             ni.onWifi = true;
@@ -460,13 +469,6 @@ public class SwitchService extends Service {
             if (s != null) {
                 ni.ssid = s;
                 ni.ssidSource = SRC_WIFI_CALLBACK;
-                // v1.7 short-circuit: the tracker already produced a
-                // known SSID, so the reading is complete. The one-shot
-                // capabilities reads and WifiManager below only exist
-                // to supplement a missing name (and, off WiFi, to find
-                // cellular evidence); with the name in hand they would
-                // add location-attributed reads and change nothing:
-                // onCellular only feeds the off-WiFi branches.
                 return ni;
             }
         }
