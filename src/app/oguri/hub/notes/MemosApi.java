@@ -81,8 +81,11 @@ public class MemosApi {
             r.status = c.getResponseCode();
             for (java.util.Map.Entry<String, List<String>> e
                     : c.getHeaderFields().entrySet()) {
-                if (e.getKey() != null && e.getKey().equalsIgnoreCase("Set-Cookie")
-                        && e.getValue() != null) {
+                // The REST gateway also delivers the sign-in refresh
+                // cookie as Grpc-Metadata-Set-Cookie (see refresh()).
+                if (e.getKey() != null && e.getValue() != null
+                        && (e.getKey().equalsIgnoreCase("Set-Cookie")
+                        || e.getKey().equalsIgnoreCase("Grpc-Metadata-Set-Cookie"))) {
                     r.setCookies.addAll(e.getValue());
                 }
             }
@@ -180,7 +183,16 @@ public class MemosApi {
     }
 
     public static Auth refresh(String server, String cookie) throws Exception {
-        Result r = request(server, "POST", "/api/auth/refresh", "{}", null, cookie, false);
+        // The REST route (/api/auth/refresh) is broken upstream in
+        // 26.11: the gateway never forwards the Cookie header, so it
+        // always answers 401 "refresh token not found" (verified
+        // live against a local 26.11.2). The Connect route for the
+        // same RPC reads the cookie properly and rotates it with a
+        // real Set-Cookie, so refresh goes there. The sign-in
+        // cookie itself arrives as Grpc-Metadata-Set-Cookie on the
+        // REST sign-in response; request() collects both spellings.
+        Result r = request(server, "POST", "/memos.api.AuthService/RefreshToken",
+                "{}", null, cookie, false);
         if (r.status == 401) {
             throw new AuthException("Session expired");
         }

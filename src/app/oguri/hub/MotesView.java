@@ -11,7 +11,7 @@ import java.util.Random;
 
 /**
  * The hub home's living background (since 1.11): tiny specks in
- * the six module accent colours drifting slowly upward behind
+ * the seven module accent colours drifting slowly upward behind
  * the cards, fading in at the bottom and out at the top, each
  * with a gentle sideways sway. Adam picked this design from
  * animated renders on 26 Nov 2026 ("Rising motes"); the shipped
@@ -25,6 +25,7 @@ public final class MotesView extends View {
     private static final int[] COLORS = {
             Color.rgb(255, 0, 174),    // Mnemosyne pink
             Color.rgb(139, 92, 246),   // Alarms violet
+            Color.rgb(176, 30, 36),    // Notes crimson
             Color.rgb(61, 220, 151),   // Steps green
             Color.rgb(245, 168, 61),   // Printer orange
             Color.rgb(69, 216, 255),   // VPN cyan
