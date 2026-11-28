@@ -240,11 +240,13 @@ public class MemosApi {
 
     public static JSONObject createMemo(String server, String token, String content,
                                         String visibility) throws Exception {
-        JSONObject memo = new JSONObject();
-        memo.put("content", content);
-        memo.put("visibility", visibility);
+        // The route's body binding is "memo": the body IS the Memo
+        // message, not a wrapper around it. Wrapping it buries the
+        // content under an unknown key and the server creates an
+        // empty memo (the 1.17 field failure).
         JSONObject body = new JSONObject();
-        body.put("memo", memo);
+        body.put("content", content);
+        body.put("visibility", visibility);
         Result r = request(server, "POST", "/api/memos", body.toString(), token, null, false);
         requireOk("Create", r);
         return new JSONObject(r.body);
@@ -253,15 +255,15 @@ public class MemosApi {
     public static JSONObject updateMemo(String server, String token, String name,
                                         String content, boolean pinned, String state)
             throws Exception {
-        JSONObject memo = new JSONObject();
-        memo.put("content", content);
-        memo.put("pinned", pinned);
-        memo.put("state", state);
+        // Body binding is "memo" here too: the body is the Memo
+        // itself, and update_mask travels as a query parameter.
         JSONObject body = new JSONObject();
-        body.put("memo", memo);
-        body.put("updateMask", "content,pinned,state");
+        body.put("content", content);
+        body.put("pinned", pinned);
+        body.put("state", state);
         String uid = name.substring(name.indexOf('/') + 1);
-        Result r = request(server, "PATCH", "/api/memos/" + enc(uid),
+        Result r = request(server, "PATCH", "/api/memos/" + enc(uid)
+                        + "?updateMask=" + enc("content,pinned,state"),
                 body.toString(), token, null, false);
         requireOk("Update", r);
         return new JSONObject(r.body);
@@ -278,15 +280,15 @@ public class MemosApi {
     public static JSONObject createAttachment(String server, String token, String filename,
                                               String type, String base64Content,
                                               String memoName) throws Exception {
-        JSONObject att = new JSONObject();
-        att.put("filename", filename);
-        att.put("type", type);
-        att.put("content", base64Content);
-        if (memoName != null && memoName.length() > 0) {
-            att.put("memo", memoName);
-        }
+        // Body binding is "attachment": the body is the Attachment
+        // itself, same rule as the memo routes above.
         JSONObject body = new JSONObject();
-        body.put("attachment", att);
+        body.put("filename", filename);
+        body.put("type", type);
+        body.put("content", base64Content);
+        if (memoName != null && memoName.length() > 0) {
+            body.put("memo", memoName);
+        }
         Result r = request(server, "POST", "/api/attachments", body.toString(), token, null, false);
         requireOk("Upload", r);
         return new JSONObject(r.body);
