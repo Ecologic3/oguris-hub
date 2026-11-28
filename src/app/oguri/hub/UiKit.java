@@ -282,4 +282,294 @@ public final class UiKit {
         });
         return pill;
     }
+
+    // ------------------------------------------------------------ dialogs
+    //
+    // The one dialog family (since 1.17.4): a themed card panel in
+    // the calling module's own palette, modelled on the input
+    // dialog Chips set as the pattern in 1.5. Adam's standing rule:
+    // no stock Android popup UI anywhere in the hub, so every
+    // confirmation, prompt, picker and time picker goes through
+    // here (or through a module's own themed dialog in this shape).
+
+    /** Callback for the themed time picker. */
+    public interface TimeSetListener {
+        void onTimeSet(int hourOfDay, int minute);
+    }
+
+    private static class DialogPanel {
+        android.app.Dialog dialog;
+        LinearLayout panel;
+    }
+
+    private static DialogPanel dialogPanel(Activity activity, int surface, int border) {
+        DialogPanel dp = new DialogPanel();
+        dp.dialog = new android.app.Dialog(activity);
+        dp.dialog.requestWindowFeature(android.view.Window.FEATURE_NO_TITLE);
+        dp.panel = new LinearLayout(activity);
+        dp.panel.setOrientation(LinearLayout.VERTICAL);
+        dp.panel.setBackground(cardBackground(activity, surface, border));
+        dp.panel.setPadding(dp(activity, 18), dp(activity, 16),
+                dp(activity, 18), dp(activity, 16));
+        return dp;
+    }
+
+    private static void showDialog(Activity activity, DialogPanel dp, boolean focusInput) {
+        android.widget.FrameLayout wrap = new android.widget.FrameLayout(activity);
+        wrap.setPadding(dp(activity, 24), 0, dp(activity, 24), 0);
+        wrap.addView(dp.panel);
+        dp.dialog.setContentView(wrap);
+        android.view.Window window = dp.dialog.getWindow();
+        if (window != null) {
+            window.setBackgroundDrawable(
+                    new android.graphics.drawable.ColorDrawable(Color.TRANSPARENT));
+            window.setLayout(ViewGroup.LayoutParams.MATCH_PARENT,
+                    ViewGroup.LayoutParams.WRAP_CONTENT);
+            if (focusInput) {
+                window.setSoftInputMode(android.view.WindowManager.LayoutParams
+                        .SOFT_INPUT_STATE_VISIBLE);
+            }
+        }
+        dp.dialog.show();
+    }
+
+    private static void addDialogButtons(final Activity activity, final DialogPanel dp,
+                                         String positiveLabel, int cancelFill,
+                                         int textColor, int positiveFill,
+                                         int positiveTextColor,
+                                         final Runnable onPositive) {
+        LinearLayout row = new LinearLayout(activity);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rp.setMargins(0, dp(activity, 16), 0, 0);
+        row.setLayoutParams(rp);
+        Button cancel = button(activity, "Cancel", cancelFill,
+                pressedOf(cancelFill), textColor);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dp.dialog.dismiss();
+            }
+        });
+        row.addView(cancel, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        Button ok = button(activity, positiveLabel, positiveFill,
+                pressedOf(positiveFill), positiveTextColor);
+        ok.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dp.dialog.dismiss();
+                if (onPositive != null) {
+                    onPositive.run();
+                }
+            }
+        });
+        LinearLayout.LayoutParams okp = new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f);
+        okp.setMargins(dp(activity, 8), 0, 0, 0);
+        row.addView(ok, okp);
+        dp.panel.addView(row);
+    }
+
+    /** A themed confirmation: title, optional message, Cancel + one action. */
+    public static void confirmDialog(Activity activity, String title, String message,
+                                     String positiveLabel, int surface, int border,
+                                     int textColor, int mutedColor, int cancelFill,
+                                     int positiveFill, int positiveTextColor,
+                                     Runnable onPositive) {
+        DialogPanel dp = dialogPanel(activity, surface, border);
+        dp.panel.addView(sectionHeading(activity, title, textColor));
+        if (message != null && message.length() > 0) {
+            TextView m = new TextView(activity);
+            m.setText(message);
+            m.setTextSize(14.5f);
+            m.setTextColor(mutedColor);
+            LinearLayout.LayoutParams mp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            mp.setMargins(0, dp(activity, 8), 0, 0);
+            m.setLayoutParams(mp);
+            dp.panel.addView(m);
+        }
+        addDialogButtons(activity, dp, positiveLabel, cancelFill, textColor,
+                positiveFill, positiveTextColor, onPositive);
+        showDialog(activity, dp, false);
+    }
+
+    /** A themed single-line text prompt; the raw text goes to done. */
+    public static void inputDialog(final Activity activity, String title, String initial,
+                                   String hint, String positiveLabel, int surface,
+                                   int border, int fieldFill, int textColor,
+                                   int mutedColor, int cancelFill, int positiveFill,
+                                   int positiveTextColor,
+                                   final java.util.function.Consumer<String> done) {
+        final DialogPanel dp = dialogPanel(activity, surface, border);
+        dp.panel.addView(sectionHeading(activity, title, textColor));
+        final android.widget.EditText e = new android.widget.EditText(activity);
+        e.setText(initial);
+        if (initial != null) {
+            e.setSelection(initial.length());
+        }
+        if (hint != null) {
+            e.setHint(hint);
+        }
+        e.setHintTextColor(mutedColor);
+        e.setTextColor(textColor);
+        e.setTextSize(17);
+        e.setSingleLine(true);
+        GradientDrawable fieldBg = new GradientDrawable();
+        fieldBg.setColor(fieldFill);
+        fieldBg.setCornerRadius(dp(activity, 10));
+        if (border != 0) {
+            fieldBg.setStroke(dp(activity, 1), border);
+        }
+        e.setBackground(fieldBg);
+        e.setPadding(dp(activity, 12), dp(activity, 10), dp(activity, 12), dp(activity, 10));
+        LinearLayout.LayoutParams ep = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        ep.setMargins(0, dp(activity, 12), 0, 0);
+        e.setLayoutParams(ep);
+        dp.panel.addView(e);
+        addDialogButtons(activity, dp, positiveLabel, cancelFill, textColor,
+                positiveFill, positiveTextColor, new Runnable() {
+                    @Override
+                    public void run() {
+                        done.accept(e.getText().toString());
+                    }
+                });
+        showDialog(activity, dp, true);
+        e.requestFocus();
+    }
+
+    /** A themed option picker: one full-width button per option, then Cancel. */
+    public static void listDialog(final Activity activity, String title,
+                                  final String[] options, int surface, int border,
+                                  int textColor, int rowFill, int cancelFill,
+                                  final java.util.function.Consumer<Integer> picked) {
+        final DialogPanel dp = dialogPanel(activity, surface, border);
+        dp.panel.addView(sectionHeading(activity, title, textColor));
+        for (int i = 0; i < options.length; i++) {
+            final int idx = i;
+            Button rowButton = button(activity, options[i], rowFill,
+                    pressedOf(rowFill), textColor);
+            LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                    ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+            rp.setMargins(0, dp(activity, i == 0 ? 12 : 8), 0, 0);
+            rowButton.setLayoutParams(rp);
+            rowButton.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    dp.dialog.dismiss();
+                    picked.accept(idx);
+                }
+            });
+            dp.panel.addView(rowButton);
+        }
+        Button cancel = button(activity, "Cancel", cancelFill,
+                pressedOf(cancelFill), textColor);
+        LinearLayout.LayoutParams cp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        cp.setMargins(0, dp(activity, 12), 0, 0);
+        cancel.setLayoutParams(cp);
+        cancel.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dp.dialog.dismiss();
+            }
+        });
+        dp.panel.addView(cancel);
+        showDialog(activity, dp, false);
+    }
+
+    /** A themed 24-hour time picker: a big readout over hour/minute steppers. */
+    public static void timeDialog(final Activity activity, String title,
+                                  int initialHour, int initialMinute,
+                                  int surface, int border, int textColor,
+                                  int mutedColor, int stepperFill, int cancelFill,
+                                  int positiveFill, int positiveTextColor,
+                                  final TimeSetListener listener) {
+        final DialogPanel dp = dialogPanel(activity, surface, border);
+        dp.panel.addView(sectionHeading(activity, title, textColor));
+        final int[] hm = new int[]{initialHour, initialMinute};
+        final TextView clock = new TextView(activity);
+        clock.setTextSize(40);
+        clock.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        clock.setTextColor(textColor);
+        clock.setGravity(Gravity.CENTER);
+        LinearLayout.LayoutParams clp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        clp.setMargins(0, dp(activity, 10), 0, dp(activity, 2));
+        clock.setLayoutParams(clp);
+        dp.panel.addView(clock);
+        dp.panel.addView(stepperRow(activity, "Hour", hm, 0, 24, clock,
+                stepperFill, textColor, mutedColor));
+        dp.panel.addView(stepperRow(activity, "Minute", hm, 1, 60, clock,
+                stepperFill, textColor, mutedColor));
+        updateClock(clock, hm);
+        addDialogButtons(activity, dp, "Set", cancelFill, textColor,
+                positiveFill, positiveTextColor, new Runnable() {
+                    @Override
+                    public void run() {
+                        listener.onTimeSet(hm[0], hm[1]);
+                    }
+                });
+        showDialog(activity, dp, false);
+    }
+
+    private static void updateClock(TextView clock, int[] hm) {
+        clock.setText(String.format(java.util.Locale.US, "%02d:%02d", hm[0], hm[1]));
+    }
+
+    private static LinearLayout stepperRow(final Activity activity, String label,
+                                           final int[] hm, final int idx, final int mod,
+                                           final TextView clock, int stepperFill,
+                                           int textColor, int mutedColor) {
+        LinearLayout row = new LinearLayout(activity);
+        row.setOrientation(LinearLayout.HORIZONTAL);
+        row.setGravity(Gravity.CENTER_VERTICAL);
+        LinearLayout.LayoutParams rp = new LinearLayout.LayoutParams(
+                ViewGroup.LayoutParams.MATCH_PARENT, ViewGroup.LayoutParams.WRAP_CONTENT);
+        rp.setMargins(0, dp(activity, 10), 0, 0);
+        row.setLayoutParams(rp);
+        TextView lab = new TextView(activity);
+        lab.setText(label);
+        lab.setTextSize(14.5f);
+        lab.setTextColor(mutedColor);
+        row.addView(lab, new LinearLayout.LayoutParams(
+                0, ViewGroup.LayoutParams.WRAP_CONTENT, 1f));
+        final TextView val = new TextView(activity);
+        val.setTextSize(17);
+        val.setTypeface(Typeface.DEFAULT, Typeface.BOLD);
+        val.setTextColor(textColor);
+        val.setGravity(Gravity.CENTER);
+        val.setText(String.format(java.util.Locale.US, "%02d", hm[idx]));
+        Button minus = smallButton(activity, "-", stepperFill,
+                pressedOf(stepperFill), textColor);
+        minus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hm[idx] = (hm[idx] + mod - 1) % mod;
+                val.setText(String.format(java.util.Locale.US, "%02d", hm[idx]));
+                updateClock(clock, hm);
+            }
+        });
+        row.addView(minus, new LinearLayout.LayoutParams(
+                dp(activity, 52), ViewGroup.LayoutParams.WRAP_CONTENT));
+        LinearLayout.LayoutParams vp = new LinearLayout.LayoutParams(
+                dp(activity, 48), ViewGroup.LayoutParams.WRAP_CONTENT);
+        row.addView(val, vp);
+        Button plus = smallButton(activity, "+", stepperFill,
+                pressedOf(stepperFill), textColor);
+        plus.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                hm[idx] = (hm[idx] + 1) % mod;
+                val.setText(String.format(java.util.Locale.US, "%02d", hm[idx]));
+                updateClock(clock, hm);
+            }
+        });
+        row.addView(plus, new LinearLayout.LayoutParams(
+                dp(activity, 52), ViewGroup.LayoutParams.WRAP_CONTENT));
+        return row;
+    }
 }

@@ -5,12 +5,9 @@ import app.oguri.hub.UiKit;
 
 import android.Manifest;
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.app.TimePickerDialog;
 import android.bluetooth.BluetoothAdapter;
 import android.bluetooth.BluetoothManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.content.res.ColorStateList;
@@ -33,13 +30,11 @@ import android.view.View;
 import android.view.ViewGroup;
 import android.widget.Button;
 import android.widget.CompoundButton;
-import android.widget.EditText;
 import android.widget.ImageView;
 import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.Switch;
 import android.widget.TextView;
-import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.text.SimpleDateFormat;
@@ -593,17 +588,15 @@ public class MainActivity extends Activity {
 
     private void showDeleteDialog(final String id) {
         final String name = AlarmStore.getName(this, id);
-        new AlertDialog.Builder(this)
-                .setTitle("Delete alarm")
-                .setMessage("Delete " + name + "?")
-                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+        UiKit.confirmDialog(this, "Delete alarm", "Delete " + name + "?", "Delete",
+                0xFF2A1065, 0xFF4C1D95, COLOR_TEXT, COLOR_TEXT_DIM,
+                0xFF150A2E, COLOR_ACCENT, Color.WHITE,
+                new Runnable() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void run() {
                         deleteAlarm(id, name);
                     }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+                });
     }
 
     private void deleteAlarm(String id, String name) {
@@ -652,10 +645,13 @@ public class MainActivity extends Activity {
     }
 
     private void showTimePicker(final String id) {
-        TimePickerDialog dialog = new TimePickerDialog(this,
-                new TimePickerDialog.OnTimeSetListener() {
+        UiKit.timeDialog(this, "Alarm time",
+                AlarmStore.getHour(this, id), AlarmStore.getMinute(this, id),
+                0xFF2A1065, 0xFF4C1D95, COLOR_TEXT, COLOR_TEXT_DIM,
+                0xFF4C1D95, 0xFF150A2E, COLOR_ACCENT, Color.WHITE,
+                new UiKit.TimeSetListener() {
                     @Override
-                    public void onTimeSet(TimePicker view, int hourOfDay, int minute) {
+                    public void onTimeSet(int hourOfDay, int minute) {
                         AlarmStore.setTime(MainActivity.this, id, hourOfDay, minute);
                         if (AlarmStore.isEnabled(MainActivity.this, id)) {
                             resendAlarm(id);
@@ -663,9 +659,7 @@ public class MainActivity extends Activity {
                         refreshCard(id);
                         refreshSummary();
                     }
-                },
-                AlarmStore.getHour(this, id), AlarmStore.getMinute(this, id), true);
-        dialog.show();
+                });
     }
 
     /** Re-sends the band state after an enabled alarm's time/days changed. */
@@ -732,22 +726,16 @@ public class MainActivity extends Activity {
 
     private void showRenameDialog(final String id) {
         final String oldName = AlarmStore.getName(this, id);
-        final EditText input = new EditText(this);
-        input.setText(oldName);
-        input.setSelection(input.getText().length());
-        input.setSingleLine(true);
-        input.setHint(AlarmStore.defaultNameFor(id));
-        new AlertDialog.Builder(this)
-                .setTitle("Rename alarm")
-                .setView(input)
-                .setPositiveButton("Save", new DialogInterface.OnClickListener() {
+        UiKit.inputDialog(this, "Rename alarm", oldName,
+                AlarmStore.defaultNameFor(id), "Save",
+                0xFF2A1065, 0xFF4C1D95, 0xFF150A2E, COLOR_TEXT, COLOR_TEXT_DIM,
+                0xFF150A2E, COLOR_ACCENT, Color.WHITE,
+                new java.util.function.Consumer<String>() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
-                        applyRename(id, oldName, input.getText().toString());
+                    public void accept(String s) {
+                        applyRename(id, oldName, s);
                     }
-                })
-                .setNegativeButton("Cancel", null)
-                .show();
+                });
     }
 
     private void applyRename(String id, String oldName, String rawName) {

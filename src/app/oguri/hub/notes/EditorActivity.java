@@ -4,8 +4,6 @@ import app.oguri.hub.R;
 import app.oguri.hub.UiKit;
 
 import android.app.Activity;
-import android.app.AlertDialog;
-import android.content.DialogInterface;
 import android.content.Intent;
 import android.database.Cursor;
 import android.graphics.Color;
@@ -279,17 +277,15 @@ public class EditorActivity extends Activity {
     }
 
     private void confirmDelete() {
-        new AlertDialog.Builder(this)
-                .setTitle("Delete memo")
-                .setMessage("Delete this memo?")
-                .setNegativeButton("Cancel", null)
-                .setPositiveButton("Delete", new DialogInterface.OnClickListener() {
+        UiKit.confirmDialog(this, "Delete memo", "Delete this memo?", "Delete",
+                COL_SURFACE, COL_BORDER, COL_TEXT, COL_MUTED,
+                COL_RAISED, COL_REMOVE_BG, COL_REMOVE,
+                new Runnable() {
                     @Override
-                    public void onClick(DialogInterface dialog, int which) {
+                    public void run() {
                         deleteMemo();
                     }
-                })
-                .show();
+                });
     }
 
     private void deleteMemo() {

@@ -1,11 +1,9 @@
 package app.oguri.hub.chips;
 
 import android.app.Activity;
-import android.app.AlertDialog;
 import android.content.ClipData;
 import android.content.ClipboardManager;
 import android.content.Context;
-import android.content.DialogInterface;
 import android.content.SharedPreferences;
 import android.graphics.Color;
 import android.graphics.drawable.GradientDrawable;
@@ -671,9 +669,10 @@ public class MainActivity extends Activity {
 
     void rebuyDialog(final Player pl) {
         final String[] opts = {"250", "500", "1000", "Custom amount"};
-        new AlertDialog.Builder(this).setTitle("Rebuy for " + pl.name)
-            .setItems(opts, new DialogInterface.OnClickListener() {
-                public void onClick(DialogInterface d, int w) {
+        UiKit.listDialog(this, "Rebuy for " + pl.name, opts,
+            CARD, BORDER, TXT, 0xFF332619, FIELD,
+            new java.util.function.Consumer<Integer>() {
+                public void accept(Integer w) {
                     if (w < 3) {
                         engine.rebuy(pl, Integer.parseInt(opts[w])); saveGame(false); refresh();
                     } else {
@@ -684,7 +683,7 @@ public class MainActivity extends Activity {
                         });
                     }
                 }
-            }).show();
+            });
     }
 
     // ================= MENU =================
@@ -1200,17 +1199,17 @@ public class MainActivity extends Activity {
         Button fresh = btn("Start a brand-new session", 0xFF3A1620, RED, 13);
         fresh.setOnClickListener(new View.OnClickListener() {
             public void onClick(View v) {
-                new AlertDialog.Builder(MainActivity.this)
-                    .setTitle("New session?")
-                    .setMessage("This clears all stacks, totals and the saved game.")
-                    .setPositiveButton("Yes, fresh start", new DialogInterface.OnClickListener() {
-                        public void onClick(DialogInterface d, int w) {
+                UiKit.confirmDialog(MainActivity.this, "New session?",
+                    "This clears all stacks, totals and the saved game.", "Yes, fresh start",
+                    CARD, BORDER, TXT, DIM, FIELD, 0xFF3A1620, RED,
+                    new Runnable() {
+                        public void run() {
                             prefs().edit().remove("chips_save").apply();
                             engine = new Engine();
                             addDefaultPlayers(engine);
                             showSetup();
                         }
-                    }).setNegativeButton("Cancel", null).show();
+                    });
             }
         });
         LinearLayout.LayoutParams fp = lpw(); fp.setMargins(0, dp(8), 0, 0);
