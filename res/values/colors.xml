@@ -8,4 +8,5 @@
     <color name="ic_mod_printer_bg">#3F2016</color>
     <color name="ic_mod_vpn_bg">#121931</color>
     <color name="ic_mod_mnemosyne_bg">#090B33</color>
+    <color name="ic_mod_notes_bg">#842323</color>
 </resources>

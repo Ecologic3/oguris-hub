@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="utf-8"?>
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
     package="app.oguri.hub"
-    android:versionCode="17"
-    android:versionName="1.16">
+    android:versionCode="18"
+    android:versionName="1.17">
 
     <uses-sdk
         android:minSdkVersion="29"
@@ -187,6 +187,15 @@
         <!-- Dashboard module -->
         <activity
             android:name="app.oguri.hub.dashboard.MainActivity"
+            android:exported="false" />
+
+        <!-- Notes module -->
+        <activity
+            android:name="app.oguri.hub.notes.MainActivity"
+            android:exported="false" />
+
+        <activity
+            android:name="app.oguri.hub.notes.EditorActivity"
             android:exported="false" />
 
     </application>

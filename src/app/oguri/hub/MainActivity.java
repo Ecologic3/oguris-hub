@@ -39,6 +39,7 @@ public class MainActivity extends Activity {
     // Oguri's Hub) and Chips sits last.
     private static final String[][] MODULES = {
         {"Mnemosyne", "Live mnemosyne dashboard", "app.oguri.hub.dashboard", "255,0,174"},
+        {"Notes", "Memos notes, synced to mnemosyne", "app.oguri.hub.notes", "176,30,36"},
         {"Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "139,92,246"},
         {"Steps", "Step counting, history and widget", "app.oguri.hub.steps", "61,220,151"},
         {"Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "245,168,61"},
@@ -51,6 +52,7 @@ public class MainActivity extends Activity {
     // proposal lands (Hub 1.8).
     private static final int[] MODULE_ICONS = {
         R.mipmap.ic_mod_mnemosyne,
+        R.mipmap.ic_mod_notes,
         R.mipmap.ic_mod_alarms,
         R.mipmap.ic_mod_steps,
         R.mipmap.ic_mod_printer,
