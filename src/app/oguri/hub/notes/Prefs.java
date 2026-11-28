@@ -18,7 +18,7 @@ import java.util.List;
  */
 public class Prefs {
 
-    public static final String DEFAULT_SERVER = "http://mnemosyne:5230";
+    public static final String DEFAULT_SERVER = "https://mnemosyne:5230";
 
     private final SharedPreferences sp;
 
@@ -29,7 +29,15 @@ public class Prefs {
     // ---------------------------------------------------------- sign-in
 
     public String getServer() {
-        return sp.getString("server", DEFAULT_SERVER);
+        String server = sp.getString("server", DEFAULT_SERVER);
+        // Since 1.17.6 the Memos front forces HTTPS (the dashboard
+        // pattern); a server stored by an older build still says
+        // http, so swap the scheme on read. saveSession stores
+        // getServer(), which makes the swap permanent on next save.
+        if (server.startsWith("http://")) {
+            server = "https://" + server.substring("http://".length());
+        }
+        return server;
     }
 
     public String getUsername() {

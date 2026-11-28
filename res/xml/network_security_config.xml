@@ -3,9 +3,10 @@
     The hub trusts the system certificates plus the Mnemosyne
     Home CA bundled in res/raw, so the Dashboard module's WebView
     can open the mnemosyne dashboard, which is served with a
-    certificate issued by that local CA. Cleartext stays off,
-    except for the Notes module's own Memos server on mnemosyne,
-    which serves plain HTTP on the home LAN and the tailnet only.
+    certificate issued by that local CA. Cleartext is off
+    everywhere; the Notes module's Memos server also speaks HTTPS
+    since 1.17.6, behind the same front and certificate as the
+    dashboard.
 -->
 <network-security-config>
     <base-config cleartextTrafficPermitted="false">
@@ -14,7 +15,7 @@
             <certificates src="@raw/mnemosyne_ca" />
         </trust-anchors>
     </base-config>
-    <domain-config cleartextTrafficPermitted="true">
+    <domain-config cleartextTrafficPermitted="false">
         <domain includeSubdomains="false">mnemosyne</domain>
         <domain includeSubdomains="false">mnemosyne.home</domain>
         <domain includeSubdomains="false">100.100.181.48</domain>
