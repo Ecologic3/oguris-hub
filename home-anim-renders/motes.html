@@ -1,0 +1,70 @@
+<html><head><meta charset="utf-8"><style>
+* { margin:0; padding:0; box-sizing:border-box; font-family: Roboto, 'Segoe UI', Arial, sans-serif; }
+body { width:412px; height:915px; overflow:hidden; background:#0D2030; position:relative; }
+.bg { position:absolute; inset:0; overflow:hidden; }
+.content { position:absolute; inset:0; padding:24px 20px; }
+.header { display:flex; align-items:center; }
+.header .title { font-size:30px; font-weight:700; color:#FFD166; flex:1; }
+.header img.hicon { width:48px; height:48px; border-radius:12px; }
+.card { display:flex; align-items:center; background:#16324A; border:1px solid #264A66;
+  border-radius:16px; padding:16px; margin-top:14px; }
+.card .bar { width:6px; height:46px; border-radius:3px; flex:none; }
+.card img.mic { width:46px; height:46px; border-radius:10px; margin-left:14px; }
+.card .texts { margin-left:14px; }
+.card .mname { color:#EBF2F7; font-size:19px; font-weight:700; }
+.card .mdesc { color:#9EB6C7; font-size:14px; margin-top:2px; }
+.pillrow { display:flex; justify-content:center; margin-top:18px; }
+.pill { background:#16324A; border:1px solid #264A66; color:#9EB6C7; font-size:14px;
+  height:40px; line-height:40px; padding:0 24px; border-radius:999px; }
+
+.mote { position:absolute; bottom:-10px; border-radius:50%; opacity:0;
+  animation: rise 2.4s linear infinite; }
+@keyframes rise {
+  0% { transform:translate(0,0); opacity:0; }
+  12% { opacity:.55; }
+  55% { transform:translate(9px,-470px); opacity:.5; }
+  88% { opacity:.45; }
+  100% { transform:translate(-6px,-930px); opacity:0; } }
+</style></head><body><div class="bg"><div class="mote" style="left:45.0%;width:4px;height:4px;background:#FF00AE;animation-delay:-1.08s"></div><div class="mote" style="left:83.2%;width:3px;height:3px;background:#8B5CF6;animation-delay:-0.44s"></div><div class="mote" style="left:50.6%;width:3px;height:3px;background:#3DDC97;animation-delay:-0.23s"></div><div class="mote" style="left:30.8%;width:2px;height:2px;background:#F5A83D;animation-delay:-1.29s"></div><div class="mote" style="left:86.6%;width:2px;height:2px;background:#45D8FF;animation-delay:-1.43s"></div><div class="mote" style="left:39.6%;width:4px;height:4px;background:#D9A441;animation-delay:-1.57s"></div><div class="mote" style="left:60.5%;width:3px;height:3px;background:#FF00AE;animation-delay:-1.50s"></div><div class="mote" style="left:81.0%;width:2px;height:2px;background:#8B5CF6;animation-delay:-0.14s"></div><div class="mote" style="left:20.1%;width:3px;height:3px;background:#3DDC97;animation-delay:-1.44s"></div><div class="mote" style="left:75.9%;width:3px;height:3px;background:#F5A83D;animation-delay:-1.06s"></div><div class="mote" style="left:82.0%;width:3px;height:3px;background:#45D8FF;animation-delay:-1.54s"></div><div class="mote" style="left:49.5%;width:2px;height:2px;background:#D9A441;animation-delay:-1.10s"></div><div class="mote" style="left:28.4%;width:2px;height:2px;background:#FF00AE;animation-delay:-1.70s"></div><div class="mote" style="left:32.0%;width:3px;height:3px;background:#8B5CF6;animation-delay:-1.23s"></div><div class="mote" style="left:4.8%;width:2px;height:2px;background:#3DDC97;animation-delay:-0.96s"></div><div class="mote" style="left:82.4%;width:4px;height:4px;background:#F5A83D;animation-delay:-0.16s"></div><div class="mote" style="left:3.6%;width:2px;height:2px;background:#45D8FF;animation-delay:-0.51s"></div><div class="mote" style="left:90.1%;width:2px;height:2px;background:#D9A441;animation-delay:-1.13s"></div><div class="mote" style="left:95.1%;width:4px;height:4px;background:#FF00AE;animation-delay:-1.01s"></div><div class="mote" style="left:55.8%;width:3px;height:3px;background:#8B5CF6;animation-delay:-1.87s"></div><div class="mote" style="left:27.6%;width:2px;height:2px;background:#3DDC97;animation-delay:-0.75s"></div><div class="mote" style="left:3.4%;width:4px;height:4px;background:#F5A83D;animation-delay:-1.82s"></div><div class="mote" style="left:13.2%;width:3px;height:3px;background:#45D8FF;animation-delay:-1.70s"></div><div class="mote" style="left:3.0%;width:4px;height:4px;background:#D9A441;animation-delay:-1.91s"></div></div>
+<div class="content">
+  <div class="header"><div class="title">Oguri's Hub</div>
+    <img class="hicon" src="file:///home/hatch/workspace/hub-app/icon-proposals/hub-proposal-3-small.png"></div>
+  
+  <div class="card">
+    <div class="bar" style="background:#FF00AE"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/hub-proposal-3-small.png">
+    <div class="texts"><div class="mname">Mnemosyne</div><div class="mdesc">Live mnemosyne dashboard</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#8B5CF6"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/alarms-final-small.png">
+    <div class="texts"><div class="mname">Alarms</div><div class="mdesc">Band alarms, backups and sync</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#3DDC97"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/steps-final-small.png">
+    <div class="texts"><div class="mname">Steps</div><div class="mdesc">Step counting, history and widget</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#F5A83D"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/printer-final-small.png">
+    <div class="texts"><div class="mname">Printer</div><div class="mdesc">Thermal printer over BLE and SPP</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#45D8FF"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/vpn-final-small.png">
+    <div class="texts"><div class="mname">VPN Switch</div><div class="mdesc">Tailscale switching based on network</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#D9A441"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/chips-final-small.png">
+    <div class="texts"><div class="mname">Chips</div><div class="mdesc">Poker chip table and game engine</div></div>
+  </div>
+  <div class="pillrow"><div class="pill">Permissions</div></div>
+</div>
+<script>
+  const t = parseFloat(new URLSearchParams(location.search).get('t') || '0');
+  window.addEventListener('load', () => {
+    document.getAnimations().forEach(a => { a.pause(); a.currentTime = t; });
+  });
+</script></body></html>

@@ -17,6 +17,7 @@ public class Memo {
 
     public String name = "";
     public String content = "";
+    public String parent = "";      // "memos/{uid}" for comments, "" for top-level
     public String visibility = "PRIVATE";
     public String state = "NORMAL";
     public boolean pinned = false;
@@ -69,6 +70,7 @@ public class Memo {
         try {
             o.put("name", name);
             o.put("content", content);
+            o.put("parent", parent);
             o.put("visibility", visibility);
             o.put("state", state);
             o.put("pinned", pinned);
@@ -93,6 +95,7 @@ public class Memo {
         Memo m = new Memo();
         m.name = o.optString("name", "");
         m.content = o.optString("content", "");
+        m.parent = o.optString("parent", "");
         m.visibility = o.optString("visibility", "PRIVATE");
         m.state = o.optString("state", "NORMAL");
         m.pinned = o.optBoolean("pinned", false);

@@ -26,8 +26,16 @@ public class MemosApi {
     public static class Result {
         int status = 0;                 // 0 = transport failure
         String body = "";
+        String error = "";              // transport failure detail
         byte[] bytes = null;
         List<String> setCookies = new ArrayList<String>();
+    }
+
+    /** The server answered 401: the access token is dead. */
+    public static class AuthException extends Exception {
+        AuthException(String message) {
+            super(message);
+        }
     }
 
     public static class Auth {
@@ -71,9 +79,12 @@ public class MemosApi {
                 out.close();
             }
             r.status = c.getResponseCode();
-            List<String> cookies = c.getHeaderFields().get("Set-Cookie");
-            if (cookies != null) {
-                r.setCookies = cookies;
+            for (java.util.Map.Entry<String, List<String>> e
+                    : c.getHeaderFields().entrySet()) {
+                if (e.getKey() != null && e.getKey().equalsIgnoreCase("Set-Cookie")
+                        && e.getValue() != null) {
+                    r.setCookies.addAll(e.getValue());
+                }
             }
             InputStream in = r.status >= 400 ? c.getErrorStream() : c.getInputStream();
             if (in != null) {
@@ -93,6 +104,7 @@ public class MemosApi {
         } catch (Exception e) {
             r.status = 0;
             r.body = e.toString();
+            r.error = e.getMessage() == null ? e.toString() : e.getMessage();
         } finally {
             if (c != null) {
                 c.disconnect();
@@ -169,10 +181,30 @@ public class MemosApi {
 
     public static Auth refresh(String server, String cookie) throws Exception {
         Result r = request(server, "POST", "/api/auth/refresh", "{}", null, cookie, false);
+        if (r.status == 401) {
+            throw new AuthException("Session expired");
+        }
         if (r.status != 200) {
-            throw new Exception("Session refresh failed (" + r.status + ")");
+            throw new Exception(failure("Session refresh", r));
         }
         return authFrom(r);
+    }
+
+    /** One readable line for a failed call, transport failures included. */
+    private static String failure(String what, Result r) {
+        if (r.status == 0) {
+            return what + " failed: no connection (" + r.error + ")";
+        }
+        return what + " failed (" + r.status + ")";
+    }
+
+    private static void requireOk(String what, Result r) throws Exception {
+        if (r.status == 401) {
+            throw new AuthException(what + " failed (401)");
+        }
+        if (r.status != 200) {
+            throw new Exception(failure(what, r));
+        }
     }
 
     private static Auth authFrom(Result r) throws Exception {
@@ -189,26 +221,20 @@ public class MemosApi {
 
     // ---------------------------------------------------------- memos
 
-    /** One page of the memo list; filter is a CEL string ("" for none). */
-    public static JSONObject listPage(String server, String token, String state,
-                                      String filter, String pageToken) throws Exception {
-        StringBuilder path = new StringBuilder("/api/memos?pageSize=50&orderBy="
-                + enc("pinned desc, create_time desc"));
-        String f = "parent == null";
-        if (state != null && state.length() > 0) {
-            f += " && state == " + state;
-        }
-        if (filter != null && filter.length() > 0) {
-            f += " && " + filter;
-        }
-        path.append("&filter=").append(enc(f));
+    /**
+     * One page of the memo list, deliberately bare (page size and
+     * page token only): state, comment and ordering rules are
+     * applied client-side over the cache, so the request itself
+     * has no filter or ordering syntax left to get wrong.
+     */
+    public static JSONObject listPage(String server, String token, String pageToken)
+            throws Exception {
+        String path = "/api/memos?pageSize=50";
         if (pageToken != null && pageToken.length() > 0) {
-            path.append("&pageToken=").append(enc(pageToken));
+            path += "&pageToken=" + enc(pageToken);
         }
-        Result r = request(server, "GET", path.toString(), null, token, null, false);
-        if (r.status != 200) {
-            throw new Exception("List failed (" + r.status + ")");
-        }
+        Result r = request(server, "GET", path, null, token, null, false);
+        requireOk("List", r);
         return new JSONObject(r.body);
     }
 
@@ -220,9 +246,7 @@ public class MemosApi {
         JSONObject body = new JSONObject();
         body.put("memo", memo);
         Result r = request(server, "POST", "/api/memos", body.toString(), token, null, false);
-        if (r.status != 200) {
-            throw new Exception("Create failed (" + r.status + ")");
-        }
+        requireOk("Create", r);
         return new JSONObject(r.body);
     }
 
@@ -239,18 +263,14 @@ public class MemosApi {
         String uid = name.substring(name.indexOf('/') + 1);
         Result r = request(server, "PATCH", "/api/memos/" + enc(uid),
                 body.toString(), token, null, false);
-        if (r.status != 200) {
-            throw new Exception("Update failed (" + r.status + ")");
-        }
+        requireOk("Update", r);
         return new JSONObject(r.body);
     }
 
     public static void deleteMemo(String server, String token, String name) throws Exception {
         String uid = name.substring(name.indexOf('/') + 1);
         Result r = request(server, "DELETE", "/api/memos/" + enc(uid), null, token, null, false);
-        if (r.status != 200) {
-            throw new Exception("Delete failed (" + r.status + ")");
-        }
+        requireOk("Delete", r);
     }
 
     // ---------------------------------------------------------- attachments
@@ -268,9 +288,7 @@ public class MemosApi {
         JSONObject body = new JSONObject();
         body.put("attachment", att);
         Result r = request(server, "POST", "/api/attachments", body.toString(), token, null, false);
-        if (r.status != 200) {
-            throw new Exception("Upload failed (" + r.status + ")");
-        }
+        requireOk("Upload", r);
         return new JSONObject(r.body);
     }
 
@@ -279,8 +297,11 @@ public class MemosApi {
                                               Memo.Attachment a) throws Exception {
         String path = "/file/attachments/" + enc(a.uid()) + "/" + enc(a.filename);
         Result r = request(server, "GET", path, null, token, null, true);
+        if (r.status == 401) {
+            throw new AuthException("Download failed (401)");
+        }
         if (r.status != 200 || r.bytes == null) {
-            throw new Exception("Download failed (" + r.status + ")");
+            throw new Exception(failure("Download", r));
         }
         return r.bytes;
     }

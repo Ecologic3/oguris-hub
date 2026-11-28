@@ -41,8 +41,9 @@ import java.util.Locale;
 /**
  * Notes: the hub's native front end for the Memos server on
  * mnemosyne (26.x API, see MemosApi). The module's own palette is a
- * crimson family on the hub's shared background, and the geometry
- * is the shared UiKit's, like every other module.
+ * crimson family on its own deep crimson background (the Alarms
+ * pattern: every module tints its background to its theme), and
+ * the geometry is the shared UiKit's, like every other module.
  *
  * The stream renders from the local cache first and syncs behind
  * it: every change is written to the cache and the pending queue
@@ -52,7 +53,7 @@ import java.util.Locale;
  */
 public class MainActivity extends Activity {
 
-    private static final int COL_BG = UiKit.BG;
+    private static final int COL_BG = 0xFF1D0D10;
     private static final int COL_SURFACE = 0xFF2B1D22;
     private static final int COL_RAISED = 0xFF3A252C;
     private static final int COL_BORDER = 0xFF52323B;
@@ -677,9 +678,17 @@ public class MainActivity extends Activity {
             @Override
             public void run() {
                 try {
-                    String token = freshToken();
-                    byte[] bytes = MemosApi.fetchAttachmentBytes(
-                            prefs.getServer(), token, a);
+                    byte[] bytes;
+                    try {
+                        bytes = MemosApi.fetchAttachmentBytes(
+                                prefs.getServer(), prefs.getAccessToken(), a);
+                    } catch (MemosApi.AuthException ae) {
+                        MemosApi.Auth auth = MemosApi.refresh(
+                                prefs.getServer(), prefs.getRefreshCookie());
+                        prefs.saveTokens(auth.accessToken, auth.expireMillis, auth.cookie);
+                        bytes = MemosApi.fetchAttachmentBytes(
+                                prefs.getServer(), auth.accessToken, a);
+                    }
                     cache.getParentFile().mkdirs();
                     FileOutputStream out = new FileOutputStream(cache);
                     out.write(bytes);
@@ -704,19 +713,12 @@ public class MainActivity extends Activity {
     }
 
     // ---------------------------------------------------------- sync
-
-    /** A usable access token, refreshing first when it has expired. */
-    private String freshToken() throws Exception {
-        String token = prefs.getAccessToken();
-        long expire = prefs.getAccessExpireMillis();
-        if (token.length() == 0 || (expire > 0
-                && expire - System.currentTimeMillis() < 60000)) {
-            MemosApi.Auth a = MemosApi.refresh(prefs.getServer(), prefs.getRefreshCookie());
-            prefs.saveTokens(a.accessToken, a.expireMillis, a.cookie);
-            token = a.accessToken;
-        }
-        return token;
-    }
+    //
+    // The stored access token is used as-is; the parsed expiry is
+    // never trusted to kill it early. Only a real 401 earns a
+    // refresh, and only a failed refresh ends the session. The
+    // list request itself is bare (see MemosApi.listPage): state,
+    // comments and ordering are all settled client-side.
 
     private void syncNow() {
         if (!streamBuilt || syncing || !prefs.hasSession()) {
@@ -727,24 +729,42 @@ public class MainActivity extends Activity {
         new Thread(new Runnable() {
             @Override
             public void run() {
-                String outcome;
+                String outcome = "";
+                boolean deadSession = false;
                 try {
-                    String token = freshToken();
-                    boolean flushed = flushPending(token);
-                    fetchState(token, "NORMAL");
-                    fetchState(token, "ARCHIVED");
+                    String token = prefs.getAccessToken();
+                    boolean flushed;
+                    try {
+                        flushed = flushPending(token);
+                        fetchAll(token);
+                    } catch (MemosApi.AuthException ae) {
+                        MemosApi.Auth a = MemosApi.refresh(
+                                prefs.getServer(), prefs.getRefreshCookie());
+                        prefs.saveTokens(a.accessToken, a.expireMillis, a.cookie);
+                        flushed = flushPending(a.accessToken);
+                        fetchAll(a.accessToken);
+                    }
                     lastSyncMillis = System.currentTimeMillis();
                     int left = prefs.getPending().length();
                     outcome = flushed && left == 0 ? "" : left + " waiting to sync";
+                } catch (MemosApi.AuthException ae) {
+                    deadSession = true;
                 } catch (Exception e) {
                     outcome = prefs.getCache(showState).isEmpty()
-                            ? "Cannot reach the server" : "Offline, showing saved notes";
+                            ? e.getMessage()
+                            : "Offline, showing saved notes";
                 }
                 final String fOutcome = outcome;
+                final boolean fDead = deadSession;
                 runOnUiThread(new Runnable() {
                     @Override
                     public void run() {
                         syncing = false;
+                        if (fDead) {
+                            prefs.clearSession();
+                            buildSignIn("Session expired, sign in again");
+                            return;
+                        }
                         if (streamBuilt) {
                             statusLine.setText(fOutcome);
                             renderFromCache();
@@ -755,11 +775,17 @@ public class MainActivity extends Activity {
         }).start();
     }
 
-    private void fetchState(String token, String state) throws Exception {
+    /**
+     * Refetches the whole stream and rebuilds both state caches.
+     * Comments (memos with a parent) never enter the stream, the
+     * order is pinned first then newest first, and local memos
+     * whose create has not landed survive the refetch.
+     */
+    private void fetchAll(String token) throws Exception {
         List<Memo> fetched = new ArrayList<Memo>();
         String pageToken = "";
         for (int page = 0; page < 20; page++) {
-            JSONObject o = MemosApi.listPage(prefs.getServer(), token, state, "", pageToken);
+            JSONObject o = MemosApi.listPage(prefs.getServer(), token, pageToken);
             JSONArray arr = o.optJSONArray("memos");
             if (arr != null) {
                 fetched.addAll(Memo.listFromJsonArray(arr));
@@ -769,22 +795,40 @@ public class MainActivity extends Activity {
                 break;
             }
         }
-        // Local memos whose create has not landed survive the refetch.
-        for (Memo old : prefs.getCache(state)) {
-            if (old.isLocal()) {
-                boolean present = false;
-                for (Memo m : fetched) {
-                    if (m.name.equals(old.name)) {
-                        present = true;
-                        break;
-                    }
+        java.util.Collections.sort(fetched, new java.util.Comparator<Memo>() {
+            @Override
+            public int compare(Memo a, Memo b) {
+                if (a.pinned != b.pinned) {
+                    return a.pinned ? -1 : 1;
                 }
-                if (!present) {
-                    fetched.add(0, old);
+                long ta = MemosApi.parseTime(a.createTime);
+                long tb = MemosApi.parseTime(b.createTime);
+                return ta < tb ? 1 : (ta > tb ? -1 : 0);
+            }
+        });
+        for (String state : new String[]{"NORMAL", "ARCHIVED"}) {
+            List<Memo> part = new ArrayList<Memo>();
+            for (Memo m : fetched) {
+                if (m.parent.length() == 0 && state.equals(m.state)) {
+                    part.add(m);
                 }
             }
+            for (Memo old : prefs.getCache(state)) {
+                if (old.isLocal()) {
+                    boolean present = false;
+                    for (Memo m : part) {
+                        if (m.name.equals(old.name)) {
+                            present = true;
+                            break;
+                        }
+                    }
+                    if (!present) {
+                        part.add(0, old);
+                    }
+                }
+            }
+            prefs.saveCache(state, part);
         }
-        prefs.saveCache(state, fetched);
     }
 
     /**

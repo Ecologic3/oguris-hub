@@ -18,7 +18,7 @@ import android.widget.ScrollView;
 import android.widget.TextView;
 
 /**
- * Oguri's Hub home screen: one dark shell, six module cards.
+ * Oguri's Hub home screen: one dark shell, seven module cards.
  * Each card opens the module's own MainActivity, ported in full
  * under app.oguri.hub.<module>.
  */
@@ -39,8 +39,8 @@ public class MainActivity extends Activity {
     // Oguri's Hub) and Chips sits last.
     private static final String[][] MODULES = {
         {"Mnemosyne", "Live mnemosyne dashboard", "app.oguri.hub.dashboard", "255,0,174"},
-        {"Notes", "Memos notes, synced to mnemosyne", "app.oguri.hub.notes", "176,30,36"},
         {"Alarms", "Band alarms, backups and sync", "app.oguri.hub.alarms", "139,92,246"},
+        {"Notes", "Memos notes, synced to mnemosyne", "app.oguri.hub.notes", "176,30,36"},
         {"Steps", "Step counting, history and widget", "app.oguri.hub.steps", "61,220,151"},
         {"Printer", "Thermal printer over BLE and SPP", "app.oguri.hub.printer", "245,168,61"},
         {"VPN Switch", "Tailscale switching based on network", "app.oguri.hub.vpn", "69,216,255"},
@@ -52,8 +52,8 @@ public class MainActivity extends Activity {
     // proposal lands (Hub 1.8).
     private static final int[] MODULE_ICONS = {
         R.mipmap.ic_mod_mnemosyne,
-        R.mipmap.ic_mod_notes,
         R.mipmap.ic_mod_alarms,
+        R.mipmap.ic_mod_notes,
         R.mipmap.ic_mod_steps,
         R.mipmap.ic_mod_printer,
         R.mipmap.ic_mod_vpn,

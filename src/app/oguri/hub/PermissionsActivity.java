@@ -29,8 +29,10 @@ import java.util.List;
 
 /**
  * The hub's one Permissions screen (since 1.5): every permission
- * the five modules need, grouped by module, replacing the
- * per-module permission sections the modules used to carry. Each
+ * the modules need, grouped by module, replacing the
+ * per-module permission sections the modules used to carry. A
+ * module that needs no permissions (Chips, Notes, Mnemosyne) has
+ * no card here at all. Each
  * row follows the settled Alarms model: the permission's name, a
  * status line that always shows where things stand, and a Grant
  * (runtime permission) or Open (system settings) button that
@@ -98,8 +100,6 @@ public class PermissionsActivity extends Activity {
                 Color.rgb(245, 168, 61), printerRows()));
         root.addView(moduleCard("VPN Switch", R.mipmap.ic_mod_vpn,
                 Color.rgb(69, 216, 255), vpnRows()));
-        root.addView(moduleCard("Chips", R.mipmap.ic_mod_chips,
-                Color.rgb(217, 164, 65), null));
 
         ScrollView scroll = new ScrollView(this);
         scroll.setBackgroundColor(UiKit.BG);

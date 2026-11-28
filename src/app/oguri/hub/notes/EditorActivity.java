@@ -41,7 +41,7 @@ public class EditorActivity extends Activity {
     public static final String EXTRA_NAME = "name";
     private static final int REQ_PICK_IMAGE = 7;
 
-    private static final int COL_BG = UiKit.BG;
+    private static final int COL_BG = 0xFF1D0D10;
     private static final int COL_SURFACE = 0xFF2B1D22;
     private static final int COL_RAISED = 0xFF3A252C;
     private static final int COL_BORDER = 0xFF52323B;

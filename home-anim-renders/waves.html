@@ -1,0 +1,67 @@
+<html><head><meta charset="utf-8"><style>
+* { margin:0; padding:0; box-sizing:border-box; font-family: Roboto, 'Segoe UI', Arial, sans-serif; }
+body { width:412px; height:915px; overflow:hidden; background:#0D2030; position:relative; }
+.bg { position:absolute; inset:0; overflow:hidden; }
+.content { position:absolute; inset:0; padding:24px 20px; }
+.header { display:flex; align-items:center; }
+.header .title { font-size:30px; font-weight:700; color:#FFD166; flex:1; }
+.header img.hicon { width:48px; height:48px; border-radius:12px; }
+.card { display:flex; align-items:center; background:#16324A; border:1px solid #264A66;
+  border-radius:16px; padding:16px; margin-top:14px; }
+.card .bar { width:6px; height:46px; border-radius:3px; flex:none; }
+.card img.mic { width:46px; height:46px; border-radius:10px; margin-left:14px; }
+.card .texts { margin-left:14px; }
+.card .mname { color:#EBF2F7; font-size:19px; font-weight:700; }
+.card .mdesc { color:#9EB6C7; font-size:14px; margin-top:2px; }
+.pillrow { display:flex; justify-content:center; margin-top:18px; }
+.pill { background:#16324A; border:1px solid #264A66; color:#9EB6C7; font-size:14px;
+  height:40px; line-height:40px; padding:0 24px; border-radius:999px; }
+
+.wave { position:absolute; left:0; width:824px; height:200px; }
+.w1 { bottom:64px; animation: slide 2.4s linear infinite; }
+.w2 { bottom:30px; animation: slide 2.4s linear infinite reverse; opacity:.9; }
+.w3 { bottom:-16px; animation: slide 1.2s linear infinite; }
+@keyframes slide { from { transform:translateX(0); } to { transform:translateX(-412px); } }
+</style></head><body><div class="bg"><div class="wave w1"><svg width="824" height="200" viewBox="0 0 824 200" preserveAspectRatio="none"><path d="M0,80 C103,40 206,120 309,80 C412,40 515,120 618,80 C721,40 824,120 824,80 L824,200 L0,200 Z" fill="rgba(255,0,174,0.10)"/></svg></div><div class="wave w2"><svg width="824" height="200" viewBox="0 0 824 200" preserveAspectRatio="none"><path d="M0,80 C103,40 206,120 309,80 C412,40 515,120 618,80 C721,40 824,120 824,80 L824,200 L0,200 Z" fill="rgba(38,74,102,0.55)"/></svg></div><div class="wave w3"><svg width="824" height="200" viewBox="0 0 824 200" preserveAspectRatio="none"><path d="M0,80 C103,40 206,120 309,80 C412,40 515,120 618,80 C721,40 824,120 824,80 L824,200 L0,200 Z" fill="rgba(22,50,74,0.85)"/></svg></div></div>
+<div class="content">
+  <div class="header"><div class="title">Oguri's Hub</div>
+    <img class="hicon" src="file:///home/hatch/workspace/hub-app/icon-proposals/hub-proposal-3-small.png"></div>
+  
+  <div class="card">
+    <div class="bar" style="background:#FF00AE"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/hub-proposal-3-small.png">
+    <div class="texts"><div class="mname">Mnemosyne</div><div class="mdesc">Live mnemosyne dashboard</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#8B5CF6"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/alarms-final-small.png">
+    <div class="texts"><div class="mname">Alarms</div><div class="mdesc">Band alarms, backups and sync</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#3DDC97"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/steps-final-small.png">
+    <div class="texts"><div class="mname">Steps</div><div class="mdesc">Step counting, history and widget</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#F5A83D"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/printer-final-small.png">
+    <div class="texts"><div class="mname">Printer</div><div class="mdesc">Thermal printer over BLE and SPP</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#45D8FF"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/vpn-final-small.png">
+    <div class="texts"><div class="mname">VPN Switch</div><div class="mdesc">Tailscale switching based on network</div></div>
+  </div>
+  <div class="card">
+    <div class="bar" style="background:#D9A441"></div>
+    <img class="mic" src="file:///home/hatch/workspace/hub-app/icon-proposals/chips-final-small.png">
+    <div class="texts"><div class="mname">Chips</div><div class="mdesc">Poker chip table and game engine</div></div>
+  </div>
+  <div class="pillrow"><div class="pill">Permissions</div></div>
+</div>
+<script>
+  const t = parseFloat(new URLSearchParams(location.search).get('t') || '0');
+  window.addEventListener('load', () => {
+    document.getAnimations().forEach(a => { a.pause(); a.currentTime = t; });
+  });
+</script></body></html>
