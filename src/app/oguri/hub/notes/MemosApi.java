@@ -239,9 +239,13 @@ public class MemosApi {
      * applied client-side over the cache, so the request itself
      * has no filter or ordering syntax left to get wrong.
      */
-    public static JSONObject listPage(String server, String token, String pageToken)
+    public static JSONObject listPage(String server, String token, String pageToken,
+                                      String state)
             throws Exception {
         String path = "/api/memos?pageSize=50";
+        if (state != null && state.length() > 0) {
+            path += "&state=" + enc(state);
+        }
         if (pageToken != null && pageToken.length() > 0) {
             path += "&pageToken=" + enc(pageToken);
         }

@@ -717,8 +717,8 @@ public class MainActivity extends Activity {
     // The stored access token is used as-is; the parsed expiry is
     // never trusted to kill it early. Only a real 401 earns a
     // refresh, and only a failed refresh ends the session. The
-    // list request itself is bare (see MemosApi.listPage): state,
-    // comments and ordering are all settled client-side.
+    // list runs once per state (the bare list is NORMAL only);
+    // comments and ordering are settled client-side.
 
     private void syncNow() {
         if (!streamBuilt || syncing || !prefs.hasSession()) {
@@ -783,16 +783,21 @@ public class MainActivity extends Activity {
      */
     private void fetchAll(String token) throws Exception {
         List<Memo> fetched = new ArrayList<Memo>();
-        String pageToken = "";
-        for (int page = 0; page < 20; page++) {
-            JSONObject o = MemosApi.listPage(prefs.getServer(), token, pageToken);
-            JSONArray arr = o.optJSONArray("memos");
-            if (arr != null) {
-                fetched.addAll(Memo.listFromJsonArray(arr));
-            }
-            pageToken = o.optString("nextPageToken", "");
-            if (pageToken.length() == 0) {
-                break;
+        // The bare list returns NORMAL memos only (verified against
+        // the 26.11.2 server), so each state is listed explicitly
+        // and the two are merged before the split below.
+        for (String state : new String[]{"NORMAL", "ARCHIVED"}) {
+            String pageToken = "";
+            for (int page = 0; page < 20; page++) {
+                JSONObject o = MemosApi.listPage(prefs.getServer(), token, pageToken, state);
+                JSONArray arr = o.optJSONArray("memos");
+                if (arr != null) {
+                    fetched.addAll(Memo.listFromJsonArray(arr));
+                }
+                pageToken = o.optString("nextPageToken", "");
+                if (pageToken.length() == 0) {
+                    break;
+                }
             }
         }
         java.util.Collections.sort(fetched, new java.util.Comparator<Memo>() {
